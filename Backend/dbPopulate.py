@@ -19,9 +19,9 @@ reviews = [
 ]
 # List of users used to populate the database
 users = [
-    {"id": 1, "name": "John", "username": "J", "password": "123"},
-    {"id": 2, "name": "Adam", "username": "A", "password": "123"},
-    {"id": 3, "name": "Lorimer", "username": "L", "password": "123"}
+    {"id": 1, "name": "John", "username": "J", "password": "123", "chosenAlarmId": 1},
+    {"id": 2, "name": "Adam", "username": "A", "password": "123", "chosenAlarmId": 2},
+    {"id": 3, "name": "Lorimer", "username": "L", "password": "123", "chosenAlarmId": 3}
 ]
 
 
@@ -69,7 +69,8 @@ def preloadUsers():
                     id=user["id"],
                     name=user["name"],
                     username=user["username"],
-                    password=user["password"]
+                    password=user["password"],
+                    chosenAlarmId=user["chosenAlarmId"]
                 )
                 db.session.add(newUser)                 # Add the new user to the database session
             db.session.commit()                         # Commit changes to the database

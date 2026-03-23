@@ -16,8 +16,9 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     username = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(100), nullable=False)
+    chosenAlarmId = db.Column(db.Integer, nullable=False)
     def asdict(self):
-        return {'id': self.id, 'name': self.name, 'username': self.username, 'password': self.password}
+        return {'id': self.id, 'name': self.name, 'username': self.username, 'password': self.password, 'chosenAlarmId' : self.chosenAlarmId}
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
