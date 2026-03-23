@@ -44,10 +44,10 @@ def preloadAlarms():
 
 # Function to preload the database with review data
 def preloadReviews():
-    with app.app_context():                         # Ensure the database operations run inside the flask app context
-        if Review.query.count() == 0:                # Check if the Review table in the database is empty
-            for review in reviews:                    # loops through all reviews in the reviews list
-                newReview = Review(                   # Create a new Review instance with the provided data
+    with app.app_context():                             # Ensure the database operations run inside the flask app context
+        if Review.query.count() == 0:                   # Check if the Review table in the database is empty
+            for review in reviews:                      # loops through all reviews in the reviews list
+                newReview = Review(                     # Create a new Review instance with the provided data
                     id=review["id"],
                     userId=review["userId"],
                     alarmId=review["alarmId"],
