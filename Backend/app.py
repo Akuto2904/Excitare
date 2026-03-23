@@ -126,6 +126,24 @@ class usersAPI(Resource):
 
         return {"message": "User updated successfully!"}
     
+    # Posts new user given user JSON
+    def post(self):
+        user = request.get_json()
+
+        if (db.session.execute(func.count((User).where(user.id == id)))>0):
+            newUser = User(                   # Create a new User instance with the provided data
+                id=user["id"],
+                name=user["name"],
+                username=user["username"],
+                password=user["password"],
+                chosenAlarmId=user["chosenAlarmId"]
+            )
+            db.session.add(newUser)            # Add the new user to the database session
+            db.session.commit()                 # Commit changes to the database
+            return {"message": "New user added successfully!"}
+        else:
+            return jsonify({"error": "User with id already exists"}), 400
+
     # DELETE method removes an user by ID
     def delete(self):
         user = request.json
@@ -194,7 +212,7 @@ def getUser(id):
     user = row[0]
     return jsonify(user.asdict())
 
-# Retrives user json given users ID in url
+# Retrives user json given users username in url
 @app.route('/api/user/<string:username>', methods = ['GET'])
 def getUserViaUsername(username):
     row = db.session.execute(select(User).where(User.username == username)).first()
