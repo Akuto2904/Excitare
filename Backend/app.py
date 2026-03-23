@@ -3,7 +3,7 @@ from flask import Flask, jsonify, render_template, request
 from sqlalchemy import select, func
 from flask_restful import Api, Resource
 from models import db, Alarm, User, Review
-#curl -X POST -H "Content-Type: application/json" -d '{"id": 8, "name": "new cool Alarm", "description": "great and new"}' http://localhost:127.0.0.1:8000/api/alarms
+
 # Create a Flask application instance
 app = Flask(__name__)
 
@@ -82,21 +82,84 @@ class alarmsAPI(Resource):
 
         return {"message": "Alarm deleted successfully!"}
 
+# API Resource for users
+class usersAPI(Resource):
+    # GET endpoint method retrieves all users from the database
+    def get(self):
+        users = User.query.all()  # Fetch all users from SQLite
+        userList = []
+        if not users:
+            return jsonify({"error": "not found"}), 404
 
+        # Loop through each user and prepare data for JSON response
+        for user in users:
+            userData = {
+                "id": user.id,
+                "name": user.name,
+                "username": user.username,
+                "password": user.password,
+                "chosenAlarmId": user.chosenAlarmId
+            }
+            userList.append(userData)
 
-# Register API Endpoint
+        # Return the user list in JSON format
+        return jsonify(userList)
+
+    # PUT endpoint method to update an existing user
+    def put(self):
+        user = request.json
+        id = user.get("id")
+
+        matchingUser = User.query.get(id)
+        if not matchingUser:
+            return {"error": "Alarm not found"}
+
+        # Update user details
+        matchingUser.id = user["id"]
+        matchingUser.name = user["name"]
+        matchingUser.username = user["username"]
+        matchingUser.password = user["password"]
+        matchingUser.chosenAlarmId = user["chosenAlarmId"]
+
+        # Commit the changes
+        db.session.commit()
+
+        return {"message": "User updated successfully!"}
+    
+    # DELETE method removes an user by ID
+    def delete(self):
+        user = request.json
+        if not user:
+            return jsonify({"error": "not found"}), 404
+        
+        userID = user.get("id")
+
+        foundUser = User.query.get(userID)
+        if not foundUser:
+            return {"error": "User not found"}
+
+        # Delete the alarm and commit changes
+        db.session.delete(foundUser)
+        db.session.commit()
+
+        return {"message": "User deleted successfully!"}
+
+# Register API Endpoint for alarms management
 api.add_resource(alarmsAPI, "/api/alarms")
+# Register API Endpoint for users management
+api.add_resource(usersAPI, "/api/users")
 
 
-#Setup basic routes
+# Setup basic routes for homepage temporarily
 @app.route('/')
 def index():
-    alarms = Alarm.query.all()  # Fetch all alarms from SQLite
-    users = User.query.all()  # Fetch all users from SQLite
-    reviews = Review.query.all()  # Fetch all reviews from SQLite
+    alarms = Alarm.query.all()      # Fetch all alarms from SQLite
+    users = User.query.all()        # Fetch all users from SQLite
+    reviews = Review.query.all()    # Fetch all reviews from SQLite
     
     return render_template('index.html', alarms=alarms, users=users, reviews=reviews)
 
+# Retrives alarm json given alarm ID in url
 @app.route('/api/alarm/<int:id>', methods = ['GET'])
 def getAlarm(id):
     row = db.session.execute(select(Alarm).where(Alarm.id == id)).first()
@@ -105,6 +168,7 @@ def getAlarm(id):
     alarm = row[0]
     return jsonify(alarm.asdict())
 
+# Posts new given alarm JSON, and given alarm ID in url
 @app.route('/api/alarm/<int:id>', methods = ['POST'])
 def postAlarm(id):
     alarm = request.get_json()
@@ -121,8 +185,25 @@ def postAlarm(id):
     else:
         return jsonify({"error": "Alarm with id already exists"}), 400
 
+# Retrives user json given users ID in url
+@app.route('/api/user/<int:id>', methods = ['GET'])
+def getUser(id):
+    row = db.session.execute(select(User).where(User.id == id)).first()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    user = row[0]
+    return jsonify(user.asdict())
 
+# Retrives user json given users ID in url
+@app.route('/api/user/<string:username>', methods = ['GET'])
+def getUserViaUsername(username):
+    row = db.session.execute(select(User).where(User.username == username)).first()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    user = row[0]
+    return jsonify(user.asdict())
 
+# Retrives an alarm's reviews as json given the alarms ID in url
 @app.route('/api/reviews/<int:alarmIdGiven>', methods = ['GET'])
 def getAlarmReviews(alarmIdGiven):
     # Returns json containing all the reviews pertaining to the alarm whose alarm id is in the url
@@ -138,6 +219,7 @@ def getAlarmReviews(alarmIdGiven):
     
     return jsonify(reviews)
 
+# Posts new review given json of new review and given the alarms ID in url
 @app.route('/api/reviews/<int:alarmIdGiven>', methods = ['POST'])
 def postAlarmReview(alarmIdGiven):
     review = request.get_json()
@@ -157,6 +239,7 @@ def postAlarmReview(alarmIdGiven):
     else:
         return jsonify({"error": "Alarm with id already exists"}), 400
         
+# Deletes an alarm's review given a JSON containing the review's ID
 @app.route('/api/reviews', methods = ['DELETE'])
 def deleteAlarmReview():
         # DELETE method removes a review
@@ -176,7 +259,6 @@ def deleteAlarmReview():
 
         return {"message": "Alarm deleted successfully!"}
 
-
 # When this script(app.py) is run
 # Database tables are created before running
 if __name__ == '__main__':
@@ -184,8 +266,7 @@ if __name__ == '__main__':
         db.create_all()         # Tells SQLAlchemy to create all database tables based on defined models in models.py
         print(f"Database tables created successfully at {db_path}")
         
-    # Run the flask app at host='0.0.0.0', port=8000
-    #app.run(debug=True, host='0.0.0.0', port=8000)
+    # Run the flask app
     app.run(debug=True)
 
 
