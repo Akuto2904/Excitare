@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify, render_template, request
+from sqlalchemy import select, func
 from flask_restful import Api, Resource
 from models import db, Alarm, User, Review
 #curl -X POST -H "Content-Type: application/json" -d '{"id": 8, "name": "new cool Alarm", "description": "great and new"}' http://localhost:127.0.0.1:8000/api/alarms
@@ -29,6 +30,8 @@ class alarmsAPI(Resource):
     def get(self):
         alarms = Alarm.query.all()  # Fetch all alarms from SQLite
         alarmList = []
+        if not alarms:
+            return jsonify({"error": "not found"}), 404
 
         # Loop through each alarm and prepare data for JSON response
         for alarm in alarms:
@@ -41,26 +44,6 @@ class alarmsAPI(Resource):
 
         # Return the alarm list in JSON format
         return jsonify(alarmList)
-    
-    # POST endpoint method to add a new alarm
-    def post(self):
-        alarm = request.get_json()
-        if alarm["id"]
-        resp = db.Query()
-
-        if not alarm or "id" not in alarm or "name" not in alarm or "description" not in alarm:
-            return jsonify({"error": "Missing required fields: id, name, decription"}), 400
-
-        newAlarm = Alarm(                   # Create a new Alarm instance with the provided data
-            id=alarm["id"],
-            name=alarm["name"],
-            description=alarm["description"]
-        )
-        db.session.add(newAlarm)            # Add the new alarm to the database session
-        db.session.commit()                 # Commit changes to the database
-
-        return {"message": "New alarm added successfully!"}
-
 
     # PUT endpoint method to update an existing alarm
     def put(self):
@@ -84,13 +67,16 @@ class alarmsAPI(Resource):
     # DELETE method removes an alarm by ID
     def delete(self):
         alarm = request.json
+        if not alarm:
+            return jsonify({"error": "not found"}), 404
+        
         alarmID = alarm.get("id")
 
         foundAlarm = Alarm.query.get(alarmID)
         if not foundAlarm:
             return {"error": "Alarm not found"}
 
-        # Delete the driver and commit changes
+        # Delete the alarm and commit changes
         db.session.delete(foundAlarm)
         db.session.commit()
 
@@ -111,10 +97,85 @@ def index():
     
     return render_template('index.html', alarms=alarms, users=users, reviews=reviews)
 
-@app.route('/api/alarms')
-def get_alarms():
-    alarms = Alarm.query.all()  # Fetch all alarms from SQLite
-    return jsonify(alarms)
+@app.route('/api/alarm/<int:id>', methods = ['GET'])
+def getAlarm(id):
+    row = db.session.execute(select(Alarm).where(Alarm.id == id)).first()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    alarm = row[0]
+    return jsonify(alarm.asdict())
+
+@app.route('/api/alarm/<int:id>', methods = ['POST'])
+def postAlarm(id):
+    alarm = request.get_json()
+
+    if (db.session.execute(func.count((Alarm).where(alarm.id == id)))>0):
+        newAlarm = Alarm(                   # Create a new Alarm instance with the provided data
+            id=alarm["id"],
+            name=alarm["name"],
+            description=alarm["description"]
+        )
+        db.session.add(newAlarm)            # Add the new alarm to the database session
+        db.session.commit()                 # Commit changes to the database
+        return {"message": "New alarm added successfully!"}
+    else:
+        return jsonify({"error": "Alarm with id already exists"}), 400
+
+
+
+@app.route('/api/reviews/<int:alarmIdGiven>', methods = ['GET'])
+def getAlarmReviews(alarmIdGiven):
+    # Returns json containing all the reviews pertaining to the alarm whose alarm id is in the url
+    rows = db.session.execute(select(Review).where(Review.alarmId == alarmIdGiven))
+    if not rows:
+        return jsonify({"error": "not found"}), 404
+    x = 0
+
+    reviews = []
+
+    for row in rows:
+        reviews.append(row[0].asdict())
+    
+    return jsonify(reviews)
+
+@app.route('/api/reviews/<int:alarmIdGiven>', methods = ['POST'])
+def postAlarmReview(alarmIdGiven):
+    review = request.get_json()
+    if not review:
+        return jsonify({"error": "not found"}), 404
+
+    if (db.session.execute(func.count((Review).where(review.id == alarmIdGiven)))>0):
+        newReview = Review(                     # Create a new review instance with the provided data
+            id = review["id"],
+            userId = review["userId"],
+            alarmId = alarmIdGiven,
+            reviewText = review["reviewText"],
+        )
+        db.session.add(newReview)               # Add the new review to the database session
+        db.session.commit()                     # Commit changes to the database
+        return {"message": "New review added successfully!"}
+    else:
+        return jsonify({"error": "Alarm with id already exists"}), 400
+        
+@app.route('/api/reviews', methods = ['DELETE'])
+def deleteAlarmReview():
+        # DELETE method removes a review
+        review = request.json
+        if not review:
+            return jsonify({"error": "not found"}), 404
+        
+        reviewID = review.get("id")
+
+        foundReview = Review.query.get(reviewID)
+        if not foundReview:
+            return {"error": "Review not found"}
+
+        # Delete the review and commit changes
+        db.session.delete(foundReview)
+        db.session.commit()
+
+        return {"message": "Alarm deleted successfully!"}
+
 
 # When this script(app.py) is run
 # Database tables are created before running
