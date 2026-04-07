@@ -1,5 +1,6 @@
 import os
-from flask import Flask, jsonify, render_template, request
+import json
+from flask import Flask, jsonify, render_template, request, url_for
 from sqlalchemy import select, func
 from flask_restful import Api, Resource
 from models import db, Alarm, User, Review
@@ -42,6 +43,43 @@ class alarmsAPI(Resource):
                 "id": alarm.id,
                 "name": alarm.name,
                 "description": alarm.description,
+                "_links": [
+                    {
+                    "href": url_for("alarmsapi"),
+                    "rel": "all",
+                    "method": "GET"
+                    },
+                    {
+                    "href": url_for("alarmsapi"),
+                    "rel": "update",
+                    "method": "PUT"
+                    },
+                    {
+                    "href": url_for("alarmsapi"),
+                    "rel": "delete",
+                    "method": "DELETE"
+                    },
+                    {
+                    "href": f"/api/alarm/{alarm.id}",
+                    "rel": "new",
+                    "method": "POST"
+                    },
+                    {
+                    "href": f"/api/alarm/{alarm.id}",
+                    "rel": "this",
+                    "method": "GET",
+                    },
+                    {
+                    "href": f"/api/reviews/{alarm.id}",
+                    "rel": "reviews",
+                    "method": "GET",
+                    },
+                    {
+                    "href": f"/api/reviews/{alarm.id}",
+                    "rel": "review",
+                    "method": "POST",
+                    }
+                ]
             }
             alarmList.append(alarmData)
 
@@ -66,7 +104,17 @@ class alarmsAPI(Resource):
         # Commit the changes
         db.session.commit()
 
-        return {"message": "Alarm updated successfully!"}
+        return jsonify(
+            {"message": "Alarm updated successfully!",
+            "_links": [
+                    {
+                    "href": f"/api/alarm/{matchingAlarm.id}",
+                    "rel": "this",
+                    "method": "GET",
+                    }
+                ]
+            
+            })
     
     # DELETE method removes an alarm by ID
     @require_api_key  # Applies middleware
@@ -104,7 +152,39 @@ class usersAPI(Resource):
                 "name": user.name,
                 "username": user.username,
                 "password": user.password,
-                "chosenAlarmId": user.chosenAlarmId
+                "chosenAlarmId": user.chosenAlarmId,
+                "_links": [
+                    {
+                        "href": url_for("usersapi"),
+                        "rel": "all",
+                        "method": "GET"
+                    },
+                    {
+                        "href": url_for("usersapi"),
+                        "rel": "update",
+                        "method": "PUT"
+                    },
+                    {
+                        "href": url_for("usersapi"),
+                        "rel": "new",
+                        "method": "POST"
+                    },
+                    {
+                        "href": url_for("usersapi"),
+                        "rel": "delete",
+                        "method": "DELETE"
+                    },
+                    {
+                        "href": f"/api/user/{user.id}",
+                        "rel": "this",
+                        "method": "GET"
+                    },
+                    {
+                        "href": f"/api/alarm/{user.chosenAlarmId}",
+                        "rel": "alarm",
+                        "method": "GET"
+                    },
+                ]
             }
             userList.append(userData)
 
@@ -131,7 +211,17 @@ class usersAPI(Resource):
         # Commit the changes
         db.session.commit()
 
-        return {"message": "User updated successfully!"}
+        return jsonify(
+            {"message": "User updated successfully!",
+                "_links": [
+                    {
+                    "href": f"/api/users/{user["id"]}",
+                    "rel": "this",
+                    "method": "GET",
+                    }
+                ]
+            }
+        )
     
     # Posts new user given user JSON
     @require_api_key  # Applies middleware
@@ -148,7 +238,18 @@ class usersAPI(Resource):
             )
             db.session.add(newUser)            # Add the new user to the database session
             db.session.commit()                 # Commit changes to the database
-            return {"message": "New user added successfully!"}
+            return jsonify(
+                {"message": "New user added successfully!",
+                    "_links": [
+                        {
+                        "href": f"/api/users/{user["id"]}",
+                        "rel": "this",
+                        "method": "GET",
+                        }
+                    ]
+                }
+            )
+
         else:
             return jsonify({"error": "User with id already exists"}), 400
 
@@ -195,7 +296,51 @@ def getAlarm(id):
     if not row:
         return jsonify({"error": "not found"}), 404
     alarm = row[0]
-    return jsonify(alarm.asdict())
+    
+    dictAlarm = (alarm.asdict())
+    links = {
+        "_links": [
+            {
+            "href": url_for("alarmsapi"),
+            "rel": "all",
+            "method": "GET"
+            },
+            {
+            "href": url_for("alarmsapi"),
+            "rel": "update",
+            "method": "PUT"
+            },
+            {
+            "href": url_for("alarmsapi"),
+            "rel": "delete",
+            "method": "DELETE"
+            },
+            {
+            "href": f"/api/alarm/{alarm.id}",
+            "rel": "new",
+            "method": "POST"
+            },
+            {
+            "href": f"/api/alarm/{alarm.id}",
+            "rel": "this",
+            "method": "GET",
+            },
+            {
+            "href": f"/api/reviews/{alarm.id}",
+            "rel": "reviews",
+            "method": "GET",
+            },
+            {
+            "href": f"/api/reviews/{alarm.id}",
+            "rel": "review",
+            "method": "POST",
+            }
+        ]
+    }
+    
+    dictAlarm.update(links)
+        
+    return jsonify(dictAlarm)
 
 # Posts new given alarm JSON, and given alarm ID in url
 @app.route('/api/alarm/<int:id>', methods = ['POST'])

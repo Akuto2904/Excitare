@@ -12,7 +12,7 @@ Inside directory /Backend/ run command: python app.py
 ##      Alarms: 
         @ Route: /api/alarms
 
-            **Get** Endpoint - retrieves all alarms
+            **GET** Endpoint - retrieves all alarms
                 curl -H "X-API-KEY: ValidAPIKey" http://localhost:5000/api/alarms
 
             **PUT** Endpoint - updates an existing alarm, given JSON of new alarm state
@@ -21,15 +21,15 @@ Inside directory /Backend/ run command: python app.py
 
         @ Route: /api/alarm/<int:id>
 
-            **Get** Endpoint - retrives alarm json given alarm ID in url
+            **GET** Endpoint - retrives alarm json given alarm ID in url
 
-            **Post** Endpoint - Posts new given alarm given in JSON, at given the alarm's ID in url
+            **POST** Endpoint - Posts new given alarm given in JSON, at given the alarm's ID in url
 
 
 ##      Users: 
         @ Route: /api/users
 
-            **Get** Endpoint - retrieves all users
+            **GET** Endpoint - retrieves all users
 
             **PUT** Endpoint - updates an existing user, given JSON of new user state
 
@@ -39,11 +39,11 @@ Inside directory /Backend/ run command: python app.py
 
         @ Route: /api/user/<int:id>
 
-            **Get** Endpoint - retrives user json given users ID in url
+            **GET** Endpoint - retrives user json given users ID in url
 
         @ Route: /api/user/<string:username>
 
-            **Get** Endpoint - retrives user json given users username in url
+            **GET** Endpoint - retrives user json given users username in url
 
 
 ##      Reviews: 
