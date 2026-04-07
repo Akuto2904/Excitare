@@ -1,0 +1,56 @@
+.login-card {
+  max-width: 500px;
+  width: 100%;
+}
+
+.login-logo {
+  width: 100px;
+  height: auto;
+  object-fit: contain;
+}
+
+
+/* Main app title */
+.app-title {
+  color: rgb(67, 107, 163); /* dark blue */
+}
+
+/* Form labels (Email, Password) */
+.form-label-custom {
+  color: rgb(67, 107, 163);
+  font-weight: 600;
+}
+
+.login-btn {
+  background-color: #6ca5e6bd !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 0.7rem;
+  border-radius: 8px;
+}
+
+.login-btn:hover {
+  background-color: rgba(108, 165, 230, 0.741) !important;
+  color: white !important;
+}
+
+.login-btn:focus {
+  box-shadow: 0 0 0 0.2rem rgba(212, 0, 0, 0.25);
+}
+
+.forgot-password-link {
+  color: rgb(67, 107, 163);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
+
+/* Small text change for forms */
+form p {
+  font-size: 0.95rem;
+  color: #555;
+}

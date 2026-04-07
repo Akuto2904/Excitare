@@ -1,0 +1,154 @@
+/* contains specific styles for the alarm detail page */
+
+/* Main page card */
+.alarm-detail-card {
+  background-color: white;
+  border-radius: 14px;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e3eaf2;
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+/* Top row with back button and alarm title */
+.alarm-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.alarm-title-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.alarm-title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--secondary);
+  margin: 0;
+}
+
+.alarm-rating {
+  margin: 0.35rem 0 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334;
+}
+
+/* General section spacing */
+.alarm-detail-section {
+  margin-bottom: 2rem;
+}
+
+/* Section headings */
+.detail-section-heading {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 0.8rem;
+}
+
+/* Description text */
+.alarm-description-text {
+  margin: 0;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* Dropdown */
+.detail-dropdown {
+  max-width: 320px;
+}
+
+/* Set current alarm button */
+.set-alarm-btn {
+  background-color:#6ca5e6bd ;
+  border: none;
+  color: white;
+  padding: 0.8rem 1.4rem;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.set-alarm-btn:hover {
+  background-color: #5893d6bd;
+}
+
+/* Review form */
+.review-form {
+  background-color: #f8fbff;
+  border: 2px solid #d9e8f5;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.review-label {
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+.review-textarea {
+  resize: vertical;
+}
+
+/* Submit review button */
+.submit-review-btn {
+  background-color: var(--secondary);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.submit-review-btn:hover {
+  background-color: #16304d;
+}
+
+/* Mobile */
+@media (max-width: 576px) {
+  .alarm-detail-card {
+    padding: 1.25rem;
+  }
+
+  .alarm-title {
+    font-size: 1.4rem;
+  }
+
+  .detail-dropdown {
+    max-width: 100%;
+  }
+
+  .set-alarm-btn,
+  .submit-review-btn {
+    width: 100%;
+  }
+}
+
+
+/* Star rating */
+.star-rating {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+.star {
+  color: #ccc;
+  transition: 0.2s ease;
+}
+
+.star:hover {
+  color: #ffd700;
+}
+
+.star.filled {
+  color: #ffd700;
+}

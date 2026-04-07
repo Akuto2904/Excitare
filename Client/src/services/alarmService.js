@@ -1,7 +1,5 @@
 import api from './api';
 
-
-//gets alarms from backend
 export const getAlarms = async () => {
   const response = await api.get('/alarms');
   return response.data;
