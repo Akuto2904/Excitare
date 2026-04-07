@@ -13,6 +13,7 @@ Inside directory /Backend/ run command: python app.py
         @ Route: /api/alarms
 
             **Get** Endpoint - retrieves all alarms
+                curl -H "X-API-KEY: ValidAPIKey" http://localhost:5000/api/alarms
 
             **PUT** Endpoint - updates an existing alarm, given JSON of new alarm state
 

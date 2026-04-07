@@ -3,6 +3,7 @@ from flask import Flask, jsonify, render_template, request
 from sqlalchemy import select, func
 from flask_restful import Api, Resource
 from models import db, Alarm, User, Review
+from auth import require_api_key  # Import middleware from auth.py
 
 # Create a Flask application instance
 app = Flask(__name__)
@@ -26,7 +27,9 @@ api = Api(app)
 
 # API Resource for Alarms
 class alarmsAPI(Resource):
+    
     # GET endpoint method retrieves all alarms from the database
+    @require_api_key  # Applies middleware
     def get(self):
         alarms = Alarm.query.all()  # Fetch all alarms from SQLite
         alarmList = []
@@ -46,6 +49,7 @@ class alarmsAPI(Resource):
         return jsonify(alarmList)
 
     # PUT endpoint method to update an existing alarm
+    @require_api_key  # Applies middleware
     def put(self):
         alarm = request.json
         alarmId = alarm.get("id")
@@ -65,6 +69,7 @@ class alarmsAPI(Resource):
         return {"message": "Alarm updated successfully!"}
     
     # DELETE method removes an alarm by ID
+    @require_api_key  # Applies middleware
     def delete(self):
         alarm = request.json
         if not alarm:
@@ -85,6 +90,7 @@ class alarmsAPI(Resource):
 # API Resource for users
 class usersAPI(Resource):
     # GET endpoint method retrieves all users from the database
+    @require_api_key  # Applies middleware
     def get(self):
         users = User.query.all()  # Fetch all users from SQLite
         userList = []
@@ -106,6 +112,7 @@ class usersAPI(Resource):
         return jsonify(userList)
 
     # PUT endpoint method to update an existing user
+    @require_api_key  # Applies middleware
     def put(self):
         user = request.json
         id = user.get("id")
@@ -127,6 +134,7 @@ class usersAPI(Resource):
         return {"message": "User updated successfully!"}
     
     # Posts new user given user JSON
+    @require_api_key  # Applies middleware
     def post(self):
         user = request.get_json()
 
@@ -145,6 +153,7 @@ class usersAPI(Resource):
             return jsonify({"error": "User with id already exists"}), 400
 
     # DELETE method removes an user by ID
+    @require_api_key  # Applies middleware
     def delete(self):
         user = request.json
         if not user:
@@ -170,6 +179,7 @@ api.add_resource(usersAPI, "/api/users")
 
 # Setup basic routes for homepage temporarily
 @app.route('/')
+@require_api_key  # Applies middleware
 def index():
     alarms = Alarm.query.all()      # Fetch all alarms from SQLite
     users = User.query.all()        # Fetch all users from SQLite
@@ -179,6 +189,7 @@ def index():
 
 # Retrives alarm json given alarm ID in url
 @app.route('/api/alarm/<int:id>', methods = ['GET'])
+@require_api_key  # Applies middleware
 def getAlarm(id):
     row = db.session.execute(select(Alarm).where(Alarm.id == id)).first()
     if not row:
@@ -188,6 +199,7 @@ def getAlarm(id):
 
 # Posts new given alarm JSON, and given alarm ID in url
 @app.route('/api/alarm/<int:id>', methods = ['POST'])
+@require_api_key  # Applies middleware
 def postAlarm(id):
     alarm = request.get_json()
 
@@ -205,6 +217,7 @@ def postAlarm(id):
 
 # Retrives user json given users ID in url
 @app.route('/api/user/<int:id>', methods = ['GET'])
+@require_api_key  # Applies middleware
 def getUser(id):
     row = db.session.execute(select(User).where(User.id == id)).first()
     if not row:
@@ -214,6 +227,7 @@ def getUser(id):
 
 # Retrives user json given users username in url
 @app.route('/api/user/<string:username>', methods = ['GET'])
+@require_api_key  # Applies middleware
 def getUserViaUsername(username):
     row = db.session.execute(select(User).where(User.username == username)).first()
     if not row:
@@ -223,6 +237,7 @@ def getUserViaUsername(username):
 
 # Retrives an alarm's reviews as json given the alarms ID in url
 @app.route('/api/reviews/<int:alarmIdGiven>', methods = ['GET'])
+@require_api_key  # Applies middleware
 def getAlarmReviews(alarmIdGiven):
     # Returns json containing all the reviews pertaining to the alarm whose alarm id is in the url
     rows = db.session.execute(select(Review).where(Review.alarmId == alarmIdGiven))
@@ -239,6 +254,7 @@ def getAlarmReviews(alarmIdGiven):
 
 # Posts new review given json of new review and given the alarms ID in url
 @app.route('/api/reviews/<int:alarmIdGiven>', methods = ['POST'])
+@require_api_key  # Applies middleware
 def postAlarmReview(alarmIdGiven):
     review = request.get_json()
     if not review:
@@ -259,6 +275,7 @@ def postAlarmReview(alarmIdGiven):
         
 # Deletes an alarm's review given a JSON containing the review's ID
 @app.route('/api/reviews', methods = ['DELETE'])
+@require_api_key  # Applies middleware
 def deleteAlarmReview():
         # DELETE method removes a review
         review = request.json
