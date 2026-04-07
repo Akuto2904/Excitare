@@ -183,7 +183,7 @@ class usersAPI(Resource):
                         "href": f"/api/alarm/{user.chosenAlarmId}",
                         "rel": "alarm",
                         "method": "GET"
-                    },
+                    }
                 ]
             }
             userList.append(userData)
@@ -356,7 +356,19 @@ def postAlarm(id):
         )
         db.session.add(newAlarm)            # Add the new alarm to the database session
         db.session.commit()                 # Commit changes to the database
-        return {"message": "New alarm added successfully!"}
+        return {}
+
+        return jsonify(
+            {"message": "New alarm added successfully!",
+                "_links": [
+                    {
+                    "href": f"/api/alarm/{alarm["id"]}",
+                    "rel": "this",
+                    "method": "GET",
+                    }
+                ]
+            }
+        )
     else:
         return jsonify({"error": "Alarm with id already exists"}), 400
 
@@ -368,7 +380,47 @@ def getUser(id):
     if not row:
         return jsonify({"error": "not found"}), 404
     user = row[0]
-    return jsonify(user.asdict())
+
+    dictUser = (user.asdict())
+    
+    links = {
+        "_links" : [
+            {
+                "href": url_for("usersapi"),
+                "rel": "all",
+                "method": "GET"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "update",
+                "method": "PUT"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "new",
+                "method": "POST"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "delete",
+                "method": "DELETE"
+            },
+            {
+                "href": f"/api/user/{dictUser.id}",
+                "rel": "this",
+                "method": "GET"
+            },
+            {
+                "href": f"/api/alarm/{dictUser.chosenAlarmId}",
+                "rel": "alarm",
+                "method": "GET"
+            }
+        ]
+    }
+    
+    dictUser.update(links)
+        
+    return jsonify(dictUser)
 
 # Retrives user json given users username in url
 @app.route('/api/user/<string:username>', methods = ['GET'])
@@ -378,7 +430,47 @@ def getUserViaUsername(username):
     if not row:
         return jsonify({"error": "not found"}), 404
     user = row[0]
-    return jsonify(user.asdict())
+
+    dictUser = (user.asdict())
+    
+    links = {
+        "_links" : [
+            {
+                "href": url_for("usersapi"),
+                "rel": "all",
+                "method": "GET"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "update",
+                "method": "PUT"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "new",
+                "method": "POST"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "delete",
+                "method": "DELETE"
+            },
+            {
+                "href": f"/api/user/{dictUser.id}",
+                "rel": "this",
+                "method": "GET"
+            },
+            {
+                "href": f"/api/alarm/{dictUser.chosenAlarmId}",
+                "rel": "alarm",
+                "method": "GET"
+            }
+        ]
+    }
+    
+    dictUser.update(links)
+        
+    return jsonify(dictUser)
 
 # Retrives an alarm's reviews as json given the alarms ID in url
 @app.route('/api/reviews/<int:alarmIdGiven>', methods = ['GET'])
@@ -395,7 +487,20 @@ def getAlarmReviews(alarmIdGiven):
     for row in rows:
         reviews.append(row[0].asdict())
     
+
+    links = {
+        "_links" : [
+            {
+                "href": f"/api/reviews/{alarmIdGiven}",
+                "rel": "this",
+                "method": "GET"
+            }]
+    }
+
+    reviews.append(links)
+
     return jsonify(reviews)
+
 
 # Posts new review given json of new review and given the alarms ID in url
 @app.route('/api/reviews/<int:alarmIdGiven>', methods = ['POST'])
@@ -414,7 +519,23 @@ def postAlarmReview(alarmIdGiven):
         )
         db.session.add(newReview)               # Add the new review to the database session
         db.session.commit()                     # Commit changes to the database
-        return {"message": "New review added successfully!"}
+
+
+        return jsonify({
+            "message": "New review added successfully!",
+            "_links" : [
+                {
+                    "href": f"/api/reviews/{alarmIdGiven}",
+                    "rel": "reviews",
+                    "method": "GET"
+                },
+                {
+                    "href": f"/api/alarm/{alarmIdGiven}",
+                    "rel": "alarm",
+                    "method": "GET"
+                }
+            ]
+        })
     else:
         return jsonify({"error": "Alarm with id already exists"}), 400
         
@@ -437,7 +558,16 @@ def deleteAlarmReview():
         db.session.delete(foundReview)
         db.session.commit()
 
-        return {"message": "Alarm deleted successfully!"}
+        return jsonify({
+            "message": "Alarm deleted successfully!",
+            "_links" : [
+                {
+                    "href": f"/api/reviews/{reviewID}",
+                    "rel": "reviews",
+                    "method": "GET"
+                }
+            ]
+        })
 
 # When this script(app.py) is run
 # Database tables are created before running
