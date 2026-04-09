@@ -1,7 +1,7 @@
 // Page for showing details of a specific alarm, including reviews
 // and option to set as current alarm.
 
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import '../styles/main-menu.css';
 import '../styles/alarm-detail.css';
@@ -17,7 +17,18 @@ function AlarmDetailPage() {
   const { id } = useParams();
 
   // Gets the current logged in user from AuthContext
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  // Used to redirect user after logout
+  const navigate = useNavigate();
+
+  // Handles logout
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('currentAlarmName');
+    localStorage.removeItem('currentAlarmId');
+    navigate('/');
+  };
 
   // Stores the selected alarm data from the backend
   const [alarm, setAlarm] = useState(null);
@@ -85,7 +96,7 @@ function AlarmDetailPage() {
 
       // Temporarily saves the chosen alarm locally so it can be shown on other pages
       localStorage.setItem('currentAlarmName', alarm.name);
-      localStorage.setItem('currentAlarmId', alarm.id);
+      localStorage.setItem('currentAlarmId', String(alarm.id));
 
       setSetAlarmMessage('Current alarm updated successfully.');
     } catch (err) {
@@ -124,7 +135,7 @@ function AlarmDetailPage() {
         </div>
 
         <div className="navbar-right">
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={handleLogout}>
             <FiLogOut className="logout-icon" />
             Log Out
           </button>
@@ -190,8 +201,8 @@ function AlarmDetailPage() {
             <p className="no-reviews-text">No reviews yet.</p>
           ) : (
             <div className="reviews-list">
-              {reviews.map((review) => (
-                <div key={review.id} className="review-card">
+              {reviews.map((review, index) => (
+                <div key={review.id || index} className="review-card">
                   <p className="review-card-heading">User Review</p>
                   <p className="review-text">{review.reviewText}</p>
                 </div>
