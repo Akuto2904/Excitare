@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAlarms } from '../services/reviewService';
+import { getAlarms } from '../services/alarmService';
 import '../styles/alarms.css';
 
 // Temporary review data – replace with real alarm + review payloads from the API.
