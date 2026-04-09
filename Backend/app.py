@@ -5,9 +5,11 @@ from sqlalchemy import select, func
 from flask_restful import Api, Resource
 from models import db, Alarm, User, Review
 from auth import require_api_key  # Import middleware from auth.py
+from flask_cors import CORS
 
 # Create a Flask application instance
 app = Flask(__name__)
+CORS(app)
 
 # Store the database inside the project directory (database/database.db)
 db_folder = os.path.join(os.getcwd(), "database")
@@ -356,7 +358,6 @@ def postAlarm(id):
         )
         db.session.add(newAlarm)            # Add the new alarm to the database session
         db.session.commit()                 # Commit changes to the database
-        return {}
 
         return jsonify(
             {"message": "New alarm added successfully!",
