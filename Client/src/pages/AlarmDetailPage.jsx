@@ -10,10 +10,14 @@ import { useEffect, useState } from 'react';
 import { getAlarmById } from '../services/alarmService';
 import { getReviewsByAlarmId } from '../services/reviewService';
 import { updateUserChosenAlarm } from '../services/userService';
+import { useAuth } from '../auth/AuthContext';
 
 function AlarmDetailPage() {
   // Gets the alarm id from the URL
   const { id } = useParams();
+
+  // Gets the current logged in user from AuthContext
+  const { user } = useAuth();
 
   // Stores the selected alarm data from the backend
   const [alarm, setAlarm] = useState(null);
@@ -28,7 +32,7 @@ function AlarmDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Temp success/error message for setting current alarm
+  // Success / error message for setting current alarm
   const [setAlarmMessage, setSetAlarmMessage] = useState('');
   const [settingAlarm, setSettingAlarm] = useState(false);
 
@@ -55,27 +59,33 @@ function AlarmDetailPage() {
     fetchAlarmData();
   }, [id]);
 
-  // Temporary user until real login is added
-  const tempUser = {
-    id: 1,
-    name: 'Test User',
-    username: 'testuser',
-    password: 'testpassword',
-    chosenAlarmId: alarm?.id,
-  };
-
   // Handles setting the current alarm
   const handleSetCurrentAlarm = async () => {
+    // Stops the function if there is no logged in user
+    if (!user || !alarm) {
+      setSetAlarmMessage('No user or alarm found.');
+      return;
+    }
+
     try {
       setSettingAlarm(true);
       setSetAlarmMessage('');
 
+      // Temporary user object until backend auth is fully connected
       const updatedUser = {
-        ...tempUser,
+        id: user.id,
+        name: user.email, // temporary placeholder
+        username: user.email,
+        password: 'placeholder',
         chosenAlarmId: alarm.id,
       };
 
+      // Sends updated chosen alarm to the backend
       await updateUserChosenAlarm(updatedUser);
+
+      // Temporarily saves the chosen alarm locally so it can be shown on other pages
+      localStorage.setItem('currentAlarmName', alarm.name);
+      localStorage.setItem('currentAlarmId', alarm.id);
 
       setSetAlarmMessage('Current alarm updated successfully.');
     } catch (err) {

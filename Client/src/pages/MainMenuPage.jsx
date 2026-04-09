@@ -5,6 +5,21 @@ import '../styles/main-menu.css';
 import logo from '../assets/logo.png';
 
 function MainMenuPage() {
+ // Gets the current selected alarm from local storage
+  const currentAlarmName =
+    localStorage.getItem('currentAlarmName') || 'Not set yet';
+
+  // Temporary placeholder text until backend rating and description
+  // are connected properly for the chosen alarm
+  const currentAlarmRating =
+    currentAlarmName === 'Not set yet' ? 'N/A' : 'N/A';
+
+  const currentAlarmDescription =
+    currentAlarmName === 'Not set yet'
+      ? 'You have not chosen an alarm yet.'
+      : 'This is your currently selected alarm.';
+ 
+ 
   return (
     <div className="container py-5">
 
@@ -32,11 +47,9 @@ function MainMenuPage() {
         {/* Top section: current alarm info */}
         <div className="dashboard-card current-alarm-card">
           <h2 className="section-heading">Current Alarm</h2>
-          <h2 className="alarm-name">Morning Alarm</h2>
-          <p className="alarm-rating">Average Rating: 4.5 / 5</p>
-          <p className="alarm-description">
-            A calm and reliable alarm designed to wake students up before class.
-          </p>
+          <h2 className="alarm-name">{currentAlarmName}</h2>
+          <p className="alarm-rating">Average Rating: {currentAlarmRating}/ 5</p>
+          <p className="alarm-description">{currentAlarmDescription}</p>
         </div>
 
         {/* Bottom section - View alarms and settings */}
