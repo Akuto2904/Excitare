@@ -250,12 +250,21 @@ class usersAPI(Resource):
             return {"error": "Alarm not found"}
 
         # Update user details
-        matchingUser.id = user["id"]
-        matchingUser.name = user["name"]
-        matchingUser.username = user["username"]
-        matchingUser.password = user["password"]
-        matchingUser.chosenAlarmId = user["chosenAlarmId"]
-
+        if user.get("id"):
+            matchingUser.id = user["id"]
+        if user.get("name"):
+            matchingUser.name = user["name"]
+        if user.get("username"):
+            matchingUser.username = user["username"]
+        if user.get("status"):
+            matchingUser.username = user["status"]
+        if user.get("role"):
+            matchingUser.username = user["role"]
+        if user.get("password"):
+            matchingUser.password = user["password"]
+        if user.get("chosenAlarmId"):
+            matchingUser.chosenAlarmId = user["chosenAlarmId"]
+        
         # Commit the changes
         db.session.commit()
 
@@ -421,7 +430,7 @@ def postAlarm(id):
     else:
         return jsonify({"error": "Alarm with id already exists"}), 400
 
-# given users username and password in a json returns authentication
+# given users email and password in a json returns authentication
 @app.route('/api/login', methods = ['GET'])
 @require_api_key  # Applies middleware
 def loginUser():
@@ -429,7 +438,7 @@ def loginUser():
     if not loginDetails:
         return jsonify({"error": "not found"}), 404
 
-    row = db.session.execute(select(User).where(User.username == loginDetails["username"])).first()
+    row = db.session.execute(select(User).where(User.email == loginDetails["email"])).first()
     if not row:
         return jsonify({"error": "not found"}), 404
     
@@ -438,7 +447,7 @@ def loginUser():
     decryptedDatabasePass=(fernet.decrypt(bytes.fromhex(user.password))).decode()
 
     if (decryptedDatabasePass==loginDetails["password"]):
-        return {"Details": "Accepted"}
+        return jsonify({"Details": "Accepted", "userRole":user.role, "userStatus":user.status})
     else:
         return {"Details": "Rejected"}    
 
@@ -491,6 +500,57 @@ def getUser(id):
     dictUser.update(links)
         
     return jsonify(dictUser)
+
+
+
+# Retrives user status as json given users ID in url
+@app.route('/api/user/<int:id>/status', methods = ['GET'])
+@require_api_key  # Applies middleware
+def getUserStatus(id):
+    row = db.session.execute(select(User).where(User.id == id)).first()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    user = row[0]
+
+    dictUser = (user.asdict())
+    userStatus = dictUser.status
+    
+    links = {
+        "_links" : [
+            {
+                "href": url_for("usersapi"),
+                "rel": "all",
+                "method": "GET"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "update",
+                "method": "PUT"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "new",
+                "method": "POST"
+            },
+            {
+                "href": url_for("usersapi"),
+                "rel": "delete",
+                "method": "DELETE"
+            },
+            {
+                "href": f"/api/user/{dictUser.id}",
+                "rel": "this",
+                "method": "GET"
+            },
+            {
+                "href": f"/api/alarm/{dictUser.chosenAlarmId}",
+                "rel": "alarm",
+                "method": "GET"
+            }
+        ]
+    }
+        
+    return jsonify({"status": userStatus}, links)
 
 # Retrives user json given users username in url
 @app.route('/api/user/<string:username>', methods = ['GET'])

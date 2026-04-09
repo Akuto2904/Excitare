@@ -25,9 +25,9 @@ reviews = [
 ]
 # List of users used to populate the database
 users = [
-    {"id": 1, "name": "John", "username": "J", "password": "123", "chosenAlarmId": 1},
-    {"id": 2, "name": "Adam", "username": "A", "password": "123", "chosenAlarmId": 2},
-    {"id": 3, "name": "Lorimer", "username": "L", "password": "123", "chosenAlarmId": 3}
+    {"id": 1, "name": "John", "username": "J", "email" : "testemail1@gmail.com", "role" : "user", "status" : "free", "password": "123", "chosenAlarmId": 1},
+    {"id": 2, "name": "Adam", "username": "A", "email" : "testemail2@gmail.com", "role" : "user", "status" : "locked", "password": "123", "chosenAlarmId": 2},
+    {"id": 3, "name": "Lorimer", "username": "L", "email" : "testemail3@gmail.com", "role" : "admin", "status" : "free", "password": "123", "chosenAlarmId": 3}
 ]
 
 # Function to preload the database with alarm data
@@ -76,6 +76,9 @@ def preloadUsers():
                     id=user["id"],
                     name=user["name"],
                     username=user["username"],
+                    email=user['email'],
+                    role=user['role'],
+                    status=user['status'],
                     password=encryptedPassword.hex(),
                     chosenAlarmId=user["chosenAlarmId"]
                 )
