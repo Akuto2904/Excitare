@@ -208,3 +208,9 @@
   margin-top: 6px;
   margin-bottom: 10px;
 }
+
+.set-alarm-message {
+  margin-top: 10px;
+  font-weight: 600;
+  color: #16325c;
+}
