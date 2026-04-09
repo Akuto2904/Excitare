@@ -97,14 +97,15 @@
   resize: vertical;
 }
 
-/* Submit review button */
+/* Submit button */
 .submit-review-btn {
-  background-color: var(--secondary);
-  border: none;
+  background-color: #d9e8f5;
   color: white;
-  padding: 0.75rem 1.2rem;
-  border-radius: 10px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
   font-weight: 700;
+  transition: background-color 0.2s ease;
 }
 
 .submit-review-btn:hover {
@@ -151,4 +152,65 @@
 
 .star.filled {
   color: #ffd700;
+}
+
+/* Review list layout */
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+/* Individual review card */
+.review-card {
+  background-color: #f8fbff;
+  border: 1px solid #d9e8f5;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Small heading inside each review card */
+.review-card-heading {
+  font-weight: 700;
+  color: #16325c;
+  margin-bottom: 8px;
+}
+
+/* Review list layout */
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+/* Individual review card */
+.review-card {
+  background-color: #f8fbff;
+  border: 1px solid #d9e8f5;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Small heading inside each review card */
+.review-card-heading {
+  font-weight: 700;
+  color: #16325c;
+  margin-bottom: 8px;
+}
+/* Star rating row */
+.star-rating {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+.set-alarm-message {
+  margin-top: 10px;
+  font-weight: 600;
+  color: #16325c;
 }

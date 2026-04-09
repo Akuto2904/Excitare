@@ -1,22 +1,67 @@
 // Displays a list of available alarms
-
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
+import { getAlarms } from '../services/alarmService';
+import { useAuth } from '../auth/AuthContext';
 import '../styles/alarms.css';
 import '../styles/main-menu.css';
 import logo from '../assets/logo.png';
 
 function ViewAlarmsPage() {
-  // Temporary alarm data for layout/testing
-  const alarms = [
-    { id: 1, name: 'Morning Alarm', rating: 4.5 },
-    { id: 2, name: 'Soft Alarm', rating: 4.2 },
-    { id: 3, name: 'Loud Alarm', rating: 3.9 },
-    { id: 4, name: 'Nature Alarm', rating: 4.7 },
-    { id: 5, name: 'Classic Bell Alarm', rating: 3.8 },
-  ];
+  // Gets the logout function from AuthContext
+  const { logout } = useAuth();
 
-  const currentAlarm = 'Morning Alarm';
+  // Used to redirect user after logout
+  const navigate = useNavigate();
+
+  // Handles logout
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('currentAlarmName');
+    localStorage.removeItem('currentAlarmId');
+    navigate('/');
+  };
+
+  // Stores the alarms returned from the backend
+  const [alarms, setAlarms] = useState([]);
+
+  // Used to show loading and error states while data is being fetched
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Gets the currently selected alarm from local storage
+  const currentAlarm =
+    localStorage.getItem('currentAlarmName') || 'Not set yet';
+
+  // Runs once when the page loads
+  useEffect(() => {
+    const fetchAlarms = async () => {
+      try {
+        // Gets all alarms from the backend API
+        const data = await getAlarms();
+        setAlarms(data);
+      } catch (err) {
+        setError('Failed to load alarms.');
+        console.error(err);
+      } finally {
+        // Stops the loading message once the request has finished
+        setLoading(false);
+      }
+    };
+
+    fetchAlarms();
+  }, []);
+
+  // Loading state
+  if (loading) {
+    return <p className="container py-5">Loading alarms...</p>;
+  }
+
+  // Error state
+  if (error) {
+    return <p className="container py-5">{error}</p>;
+  }
 
   return (
     <div className="container py-5">
@@ -31,7 +76,7 @@ function ViewAlarmsPage() {
         </div>
 
         <div className="navbar-right">
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={handleLogout}>
             <FiLogOut className="logout-icon" />
             Log Out
           </button>
@@ -47,27 +92,35 @@ function ViewAlarmsPage() {
           </Link>
 
           <div className="current-alarm-badge">
-  <span className="current-alarm-label">Current Alarm Chosen :  </span>
-  <span className="current-alarm-name">{currentAlarm}</span>
-</div>
+            <span className="current-alarm-label">Current Alarm Chosen: </span>
+            <span className="current-alarm-name">
+              {currentAlarm === 'Not set yet' ? 'No alarm selected' : currentAlarm}
+            </span>
+          </div>
         </div>
 
         {/* Page heading */}
         <h2 className="alarms-page-title">View Alarms</h2>
 
-        {/* Alarm list */}
-        <div className="alarm-list">
-          {alarms.map((alarm) => (
-            <Link
-              to={`/alarms/${alarm.id}`}
-              className="alarm-button"
-              key={alarm.id}
-            >
-              <span className="alarm-button-name">{alarm.name}</span>
-              <span className="alarm-button-rating">⭐ {alarm.rating}</span>
-            </Link>
-          ))}
-        </div>
+        {/* If there are no alarms returned */}
+        {alarms.length === 0 ? (
+          <p>No alarms found.</p>
+        ) : (
+          <div className="alarm-list">
+            {alarms.map((alarm) => (
+              <Link
+                to={`/alarms/${alarm.id}`}
+                className="alarm-button"
+                key={alarm.id}
+              >
+                <span className="alarm-button-name">{alarm.name}</span>
+
+                {/* Rating is a placeholder for now because backend does not return one yet */}
+                <span className="alarm-button-rating">⭐ N/A</span>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

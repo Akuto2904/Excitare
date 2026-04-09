@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, jsonify, render_template, request, url_for
+from flask import Flask, jsonify, render_template, request, url_for, session, redirect
 from sqlalchemy import select, func
 from flask_restful import Api, Resource
 from models import db, Alarm, User, Review
@@ -52,6 +52,9 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Create a Flask application instance
 app = Flask(__name__)
+# Used for saving session
+app.secret_key = COOKIE_KEY
+
 CORS(app)
 
 # Store the database inside the project directory (database/database.db)
@@ -332,6 +335,8 @@ def index():
     reviews = Review.query.all()    # Fetch all reviews from SQLite
     
     return render_template('index.html', alarms=alarms, users=users, reviews=reviews)
+
+
 
 # Retrives alarm json given alarm ID in url
 @app.route('/api/alarm/<int:id>', methods = ['GET'])
@@ -674,6 +679,138 @@ def deleteAlarmReview():
                 }
             ]
         })
+
+# Send user here and itll redirect to google authentication
+@app.route('/api/<string:userID>/calendarLogin')
+#@require_api_key
+def calendarLogin(userID):
+    flow = Flow.from_client_config(clientConfig, scopes="https://www.googleapis.com/auth/calendar.readonly")
+    flow.redirect_uri = url_for('calendarLoginRedirect', _external=True)
+
+    googleAuth, state = flow.authorization_url(prompt='consent', state=userID, access_type="offline", include_granted_scopes="true")
+    session['code_verifier'] = flow.code_verifier
+    
+    return redirect(googleAuth)
+
+
+# User is sent here after google authentication, saves credentials to database then redirects
+@app.route('/calendarLoginRedirect')
+def calendarLoginRedirect():
+    userID = request.args.get('state')
+
+    flow = Flow.from_client_config(clientConfig, scopes="https://www.googleapis.com/auth/calendar.readonly")
+    flow.redirect_uri = url_for('calendarLoginRedirect', _external=True)
+    
+    loggedInStatus = request.url
+    flow.fetch_token(authorization_response=loggedInStatus, code_verifier=session['code_verifier'])
+   
+    # Retrieves current user from database
+    user = User.query.filter_by(id=userID).first()
+    # Assigns current users google refresh token to user in db
+    user.refreshToken = flow.credentials.refresh_token
+    # Saves refresh token to db
+    db.session.commit()
+
+
+    # Change this return to a redirect to the front end
+    return jsonify({"Message": "Log In Success"})
+
+@app.route('/api/<string:userID>/calendars', methods = ['GET'])
+@require_api_key
+def calendars(userID):
+
+    # Retrieves current user from url and retrieves user from database
+    user = User.query.filter_by(id=userID).first()
+
+    # Assembles credentials object using db refresh token 
+    sessionCredentials = Credentials(token=None, refresh_token=user.refreshToken, client_id=GOOGLE_CLIENT_ID, client_secret=GOOGLE_CLIENT_SECRET, token_uri=GOOGLE_TOKEN_URI)
+    
+    try:
+        service = build("calendar", "v3", credentials=sessionCredentials)
+        allCalendars = service.calendarList().list(fields="items(id,summary)").execute()
+        niceOutput = []
+        for calendar in allCalendars.get("items", []):
+            calendarInfoAsDict={
+                    "id" : calendar.get("id"),
+                    "summary" : calendar.get("summary")
+                }
+            niceOutput.append(calendarInfoAsDict)
+
+        return jsonify(niceOutput)
+        
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return jsonify({(f"An error occurred: {error}")})
+
+# Given a calendarID in a JSON, sets the user in url's chosen calendar
+@app.route('/setCalendar/<string:userID>', methods = ['PUT'])
+@require_api_key
+def setCalendar(userID):
+    requestMade = request.json
+    givenCalendarID = requestMade.get("id")
+
+    matchingUser = User.query.get(userID)
+    if not matchingUser:
+        return {"error": "User not found"}
+
+    matchingUser.chosenCalendarID = givenCalendarID
+
+    # Commit the changes
+    db.session.commit()
+
+    return jsonify(
+        {"message": "User updated successfully!",
+            "_links": [
+                {
+                "href": f"/api/users/{matchingUser.id}",
+                "rel": "this",
+                "method": "GET",
+                },
+                {
+                "href": f"/api/{matchingUser.id}/firstClass",
+                "rel": "this",
+                "method": "GET",
+                }
+            ]
+        }
+    )
+
+# Retrieves the name and the time of the first event scheduled the next day for the user in url, returns as JSON
+@app.route('/api/<string:userID>/firstClass', methods = ['GET'])
+@require_api_key
+def classTime(userID):
+    
+    # Retrieves current user from url and retrieves user from database
+    user = User.query.filter_by(id=userID).first()
+    # Assembles credentials object using db refresh token 
+    sessionCredentials = Credentials(token=None, refresh_token=user.refreshToken, client_id=GOOGLE_CLIENT_ID, client_secret=GOOGLE_CLIENT_SECRET, token_uri=GOOGLE_TOKEN_URI)
+    
+    givenCalendarID=user.chosenCalendarID
+
+    try:
+        service = build("calendar", "v3", credentials=sessionCredentials)
+        tomorrow = (datetime.now() + timedelta(days=1)).replace(hour=0, minute=0).isoformat() + 'Z'
+
+        classesAsList = service.events().list(calendarId=givenCalendarID, timeMin=tomorrow, maxResults=1, singleEvents=True, orderBy="startTime").execute()
+        classes = classesAsList.get("items", [])
+
+        if not classes:
+            print("No class tomorrow")
+            return jsonify({"message" : "No class tomorrow"},{"status" : 0})
+
+        start = classes[0]["start"].get("dateTime", classes[0]["start"].get("date"))
+        classInfo = {
+            "startTime" : start,
+            "class" : classes[0]["summary"],
+            "status" : 1
+        }
+        
+        return jsonify(classInfo)
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return jsonify({(f"An error occurred: {error}")})
+
 
 # When this script(app.py) is run
 # Database tables are created before running

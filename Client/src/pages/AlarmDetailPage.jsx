@@ -1,23 +1,126 @@
-//Page for showing details of a specific alarm, including reviews and option to set as current alarm.
-import { Link, useParams } from 'react-router-dom';
+// Page for showing details of a specific alarm, including reviews
+// and option to set as current alarm.
+
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import '../styles/main-menu.css';
 import '../styles/alarm-detail.css';
 import logo from '../assets/logo.png';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getAlarmById } from '../services/alarmService';
+import { getReviewsByAlarmId } from '../services/reviewService';
+import { updateUserChosenAlarm } from '../services/userService';
+import { useAuth } from '../auth/AuthContext';
 
 function AlarmDetailPage() {
+  // Gets the alarm id from the URL
   const { id } = useParams();
+
+  // Gets the current logged in user from AuthContext
+  const { user, logout } = useAuth();
+
+  // Used to redirect user after logout
+  const navigate = useNavigate();
+
+  // Handles logout
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('currentAlarmName');
+    localStorage.removeItem('currentAlarmId');
+    navigate('/');
+  };
+
+  // Stores the selected alarm data from the backend
+  const [alarm, setAlarm] = useState(null);
+
+  // Stores the reviews for this alarm
+  const [reviews, setReviews] = useState([]);
+
+  // Used for the temporary frontend star rating input
   const [rating, setRating] = useState(0);
 
-  // Temporary data for now
-  const alarm = {
-    id,
-    name: 'Morning Alarm',
-    rating: 4.5,
-    description:
-      'A calm and reliable alarm designed to wake students up gradually before their first class.',
+  // Loading and error states for better UX
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Success / error message for setting current alarm
+  const [setAlarmMessage, setSetAlarmMessage] = useState('');
+  const [settingAlarm, setSettingAlarm] = useState(false);
+
+  // Runs when the page loads or when the alarm id changes
+  useEffect(() => {
+    const fetchAlarmData = async () => {
+      try {
+        // Fetch the selected alarm from the backend
+        const alarmData = await getAlarmById(id);
+
+        // Fetch reviews for this alarm from the backend
+        const reviewData = await getReviewsByAlarmId(id);
+
+        setAlarm(alarmData);
+        setReviews(reviewData);
+      } catch (err) {
+        setError('Failed to load alarm details.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlarmData();
+  }, [id]);
+
+  // Handles setting the current alarm
+  const handleSetCurrentAlarm = async () => {
+    // Stops the function if there is no logged in user
+    if (!user || !alarm) {
+      setSetAlarmMessage('No user or alarm found.');
+      return;
+    }
+
+    try {
+      setSettingAlarm(true);
+      setSetAlarmMessage('');
+
+      // Temporary user object until backend auth is fully connected
+      const updatedUser = {
+        id: user.id,
+        name: user.email, // temporary placeholder
+        username: user.email,
+        password: 'placeholder',
+        chosenAlarmId: alarm.id,
+      };
+
+      // Sends updated chosen alarm to the backend
+      await updateUserChosenAlarm(updatedUser);
+
+      // Temporarily saves the chosen alarm locally so it can be shown on other pages
+      localStorage.setItem('currentAlarmName', alarm.name);
+      localStorage.setItem('currentAlarmId', String(alarm.id));
+
+      setSetAlarmMessage('Current alarm updated successfully.');
+    } catch (err) {
+      setSetAlarmMessage('Failed to set current alarm.');
+      console.error(err);
+    } finally {
+      setSettingAlarm(false);
+    }
   };
+
+  // Show loading message while data is being fetched
+  if (loading) {
+    return <p className="container py-5">Loading alarm details...</p>;
+  }
+
+  // Show error message if something goes wrong
+  if (error) {
+    return <p className="container py-5">{error}</p>;
+  }
+
+  // Show message if no alarm is found
+  if (!alarm) {
+    return <p className="container py-5">Alarm not found.</p>;
+  }
 
   return (
     <div className="container py-5">
@@ -32,7 +135,7 @@ function AlarmDetailPage() {
         </div>
 
         <div className="navbar-right">
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={handleLogout}>
             <FiLogOut className="logout-icon" />
             Log Out
           </button>
@@ -49,7 +152,9 @@ function AlarmDetailPage() {
 
           <div className="alarm-title-block">
             <h2 className="alarm-title">{alarm.name}</h2>
-            <p className="alarm-rating">⭐ {alarm.rating} / 5</p>
+
+            {/* Rating is still a placeholder until backend rating is added */}
+            <p className="alarm-rating">⭐ N/A / 5</p>
           </div>
         </div>
 
@@ -73,30 +178,60 @@ function AlarmDetailPage() {
           </select>
         </div>
 
-        {/* Set current alarm button */}
+        {/* Set as current alarm button */}
         <div className="alarm-detail-section">
-          <button className="set-alarm-btn">Set as Current Alarm</button>
+          <button
+            className="set-alarm-btn"
+            onClick={handleSetCurrentAlarm}
+            disabled={settingAlarm}
+          >
+            {settingAlarm ? 'Setting Alarm...' : 'Set as Current Alarm'}
+          </button>
+
+          {setAlarmMessage && (
+            <p className="set-alarm-message">{setAlarmMessage}</p>
+          )}
+        </div>
+
+        {/* Reviews from backend */}
+        <div className="alarm-detail-section">
+          <h3 className="detail-section-heading">Reviews</h3>
+
+          {reviews.length === 0 ? (
+            <p className="no-reviews-text">No reviews yet.</p>
+          ) : (
+            <div className="reviews-list">
+              {reviews.map((review, index) => (
+                <div key={review.id || index} className="review-card">
+                  <p className="review-card-heading">User Review</p>
+                  <p className="review-text">{review.reviewText}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Leave a review section */}
         <div className="alarm-detail-section">
           <h3 className="detail-section-heading">Leave a Review</h3>
 
-          <div className="mb-3">
-         <label className="form-label review-label">Rating</label>
+          <div className="review-form-card">
+            <div className="mb-3">
+              <label className="form-label review-label">Rating</label>
 
-        <div className="star-rating">
-          {[1, 2, 3, 4, 5].map((star) => (
-        <span
-        key={star}
-        className={star <= rating ? 'star filled' : 'star'}
-        onClick={() => setRating(star)}
-        >
-          ★
-        </span>
-        ))}
-       </div>
-
+              {/* Temporary frontend star selector */}
+              <div className="star-rating">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    className={star <= rating ? 'star filled' : 'star'}
+                    onClick={() => setRating(star)}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
 
             <div className="mb-3">
               <label htmlFor="reviewText" className="form-label review-label">

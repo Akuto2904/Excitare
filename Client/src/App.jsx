@@ -1,36 +1,58 @@
-// This file controls which page is shown depending on the URL
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-import { Routes, Route } from 'react-router-dom';
-
-//import all main pages
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import MainMenuPage from './pages/MainMenuPage';
 import ViewAlarmsPage from './pages/ViewAlarmsPage';
 import AlarmDetailPage from './pages/AlarmDetailPage';
 import SettingsPage from './pages/SettingsPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+
+import AdminLoginPage from './admin/AdminLoginPage';
+import AdminDashboardPage from './admin/AdminDashboardPage';
+import ManageUsersPage from './admin/ManageUsersPage';
+import ManageAlarmsPage from './admin/ManageAlarmsPage';
+
+import ProtectedRoute from './auth/ProtectedRoute';
 
 function App() {
   return (
     <Routes>
-      //Default route is the login page
+      {/* Client routes */}
       <Route path="/" element={<LoginPage />} />
-      
-      //Main menu after login is successful
-      <Route path="/menu" element={<MainMenuPage />} />
-
-      //Alarms page shows a list of all alarms
-      <Route path="/alarms" element={<ViewAlarmsPage />} />
-
-      //Alarm detail page shows details of a specific alarm
-      <Route path="/alarms/:id" element={<AlarmDetailPage />} />
-      
-      //User settings page
-      <Route path="/settings" element={<SettingsPage />} />
-    
-    //Forgot password page
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-    
+      <Route path="/menu" element={<MainMenuPage />} />
+      <Route path="/alarms" element={<ViewAlarmsPage />} />
+      <Route path="/alarms/:id" element={<AlarmDetailPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+
+      {/* Admin routes */}
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <ManageUsersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/alarms"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <ManageAlarmsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
