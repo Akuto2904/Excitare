@@ -3,7 +3,7 @@ import sqlite3
 # Database file
 DB_FILE = "./database/database.db"
 
-# Connect to SQLite database
+# Connect to db
 conn = sqlite3.connect(DB_FILE)
 cursor = conn.cursor()
 
@@ -16,8 +16,8 @@ try:
         print("No API keys found in the database.")
     else:
         # Print column headers
-        column_names = [description[0] for description in cursor.description]
-        print(" | ".join(column_names))
+        columnNames = [description[0] for description in cursor.description]
+        print(" | ".join(columnNames))
 
         # Print each row
         for row in rows:
