@@ -1,38 +1,40 @@
 // Displays a list of available alarms
 import React, { useState, useEffect } from 'react';
-import { getAlarms } from '../services/alarmService'
 import { Link } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
+import { getAlarms } from '../services/alarmService';
+import { useAuth } from '../auth/AuthContext';
 import '../styles/alarms.css';
 import '../styles/main-menu.css';
 import logo from '../assets/logo.png';
 
 function ViewAlarmsPage() {
-  //Stores the alarms returned from the backend
-   const [alarms, setAlarms] = useState([]);
+  // Gets the logout function from AuthContext
+  const { logout } = useAuth();
 
-   //used o show loading anerror states while data  being fetched
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState("");
+  // Stores the alarms returned from the backend
+  const [alarms, setAlarms] = useState([]);
 
-   
-   // Gets the currently selected alarm from local storage
-   const currentAlarm =
-   localStorage.getItem('currentAlarmName') || 'Not set yet';
+  // Used to show loading and error states while data is being fetched
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  // Gets the currently selected alarm from local storage
+  const currentAlarm =
+    localStorage.getItem('currentAlarmName') || 'Not set yet';
 
-   //Runs once when the page loads
-   useEffect(() => {
+  // Runs once when the page loads
+  useEffect(() => {
     const fetchAlarms = async () => {
       try {
-        //Gets all alarms from the backend API
+        // Gets all alarms from the backend API
         const data = await getAlarms();
         setAlarms(data);
       } catch (err) {
-        setError("Failed to load alarms.");
+        setError('Failed to load alarms.');
         console.error(err);
       } finally {
-        //Stops the loading message once the request has finished.
+        // Stops the loading message once the request has finished
         setLoading(false);
       }
     };
@@ -40,16 +42,16 @@ function ViewAlarmsPage() {
     fetchAlarms();
   }, []);
 
-  //Loading state
-  if (loading){
-       return <p className="container py-5">Loading alarms...</p>;
+  // Loading state
+  if (loading) {
+    return <p className="container py-5">Loading alarms...</p>;
   }
-  
-  //Error state
-  if (error){
-     return <p className="container py-5">{error}</p>;
+
+  // Error state
+  if (error) {
+    return <p className="container py-5">{error}</p>;
   }
- 
+
   return (
     <div className="container py-5">
       {/* Top navigation bar */}
@@ -63,7 +65,7 @@ function ViewAlarmsPage() {
         </div>
 
         <div className="navbar-right">
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={logout}>
             <FiLogOut className="logout-icon" />
             Log Out
           </button>
@@ -79,15 +81,17 @@ function ViewAlarmsPage() {
           </Link>
 
           <div className="current-alarm-badge">
-  <span className="current-alarm-label">Current Alarm Chosen :  </span>
-  <span className="current-alarm-name">{currentAlarm}</span>
-</div>
+            <span className="current-alarm-label">Current Alarm Chosen: </span>
+            <span className="current-alarm-name">
+              {currentAlarm === 'Not set yet' ? 'No alarm selected' : currentAlarm}
+            </span>
+          </div>
         </div>
 
         {/* Page heading */}
         <h2 className="alarms-page-title">View Alarms</h2>
 
-         {/* If there are no alarms returned */}
+        {/* If there are no alarms returned */}
         {alarms.length === 0 ? (
           <p>No alarms found.</p>
         ) : (
@@ -103,7 +107,7 @@ function ViewAlarmsPage() {
                 {/* Rating is a placeholder for now because backend does not return one yet */}
                 <span className="alarm-button-rating">⭐ N/A</span>
               </Link>
-           ))}
+            ))}
           </div>
         )}
       </div>
