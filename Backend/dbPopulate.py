@@ -1,5 +1,11 @@
 from app import app, db
 from models import Alarm, User, Review  # Import defined models in models.py
+# Password encryption
+import os
+from cryptography.fernet import Fernet
+
+FERNET_KEY=os.getenv('FERNET_KEY')
+fernet = Fernet(FERNET_KEY)
 
 # List of alarms used to populate the database
 alarms = [
@@ -13,9 +19,9 @@ alarms = [
 ]
 # List of reviews used to populate the database
 reviews = [
-    {"id": 1, "userId": 1, "alarmId": 1, "reviewText": "Wakes me up"},
-    {"id": 2, "userId": 2, "alarmId": 1, "reviewText": "Loud"},
-    {"id": 3, "userId": 3, "alarmId": 1, "reviewText": "Simple"},
+    {"id": 1, "userId": 1, "alarmId": 1, "reviewText": "Wakes me up", "reviewRating": 2},
+    {"id": 2, "userId": 2, "alarmId": 1, "reviewText": "Loud", "reviewRating": 8},
+    {"id": 3, "userId": 3, "alarmId": 1, "reviewText": "Simple", "reviewRating": 7}
 ]
 # List of users used to populate the database
 users = [
@@ -23,7 +29,6 @@ users = [
     {"id": 2, "name": "Adam", "username": "A", "password": "123", "chosenAlarmId": 2},
     {"id": 3, "name": "Lorimer", "username": "L", "password": "123", "chosenAlarmId": 3}
 ]
-
 
 # Function to preload the database with alarm data
 def preloadAlarms():
@@ -51,7 +56,8 @@ def preloadReviews():
                     id=review["id"],
                     userId=review["userId"],
                     alarmId=review["alarmId"],
-                    reviewText=review["reviewText"]
+                    reviewText=review["reviewText"],
+                    reviewRating=review["reviewRating"]
                 )
                 db.session.add(newReview)               # Add the new review to the database session
             db.session.commit()                         # Commit changes to the database
@@ -65,11 +71,12 @@ def preloadUsers():
     with app.app_context():                         # Ensure the database operations run inside the flask app context
         if User.query.count() == 0:                 # Check if the User table in the database is empty
             for user in users:                      # loops through all users in the users list
+                encryptedPassword = fernet.encrypt((user["password"]).encode()) # encrypts password
                 newUser = User(                     # Create a new User instance with the provided data
                     id=user["id"],
                     name=user["name"],
                     username=user["username"],
-                    password=user["password"],
+                    password=encryptedPassword.hex(),
                     chosenAlarmId=user["chosenAlarmId"]
                 )
                 db.session.add(newUser)                 # Add the new user to the database session

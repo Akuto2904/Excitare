@@ -18,8 +18,10 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     username = db.Column(db.String(100), nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    chosenAlarmId = db.Column(db.Integer, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    refreshToken = db.Column(db.String(1000), nullable=False, default="none")
+    chosenCalendarID = db.Column(db.String(200), nullable=False, default="none")
+    chosenAlarmId = db.Column(db.Integer, nullable=False, default="none")
     # Used to convert the object into a dictionary type allowing easy json conversion
     def asdict(self):
         return {'id': self.id, 'name': self.name, 'username': self.username, 'password': self.password, 'chosenAlarmId' : self.chosenAlarmId}
@@ -30,9 +32,10 @@ class Review(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey("user.id"))
     alarmId = db.Column(db.Integer, db.ForeignKey("alarm.id"))
     reviewText = db.Column(db.String(100), nullable=False)
+    reviewRating = db.Column(db.Integer, nullable=False)
     # Used to convert the object into a dictionary type allowing easy json conversion
     def asdict(self):
-        return {'id': self.id, 'userId': self.userId, 'alarmId': self.alarmId, 'reviewText': self.reviewText}
+        return {'id': self.id, 'userId': self.userId, 'alarmId': self.alarmId, 'reviewText': self.reviewText, 'reviewRating' : self.reviewRating}
 
 # Used for Middleware
 class APIKey(db.Model):

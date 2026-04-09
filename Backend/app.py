@@ -7,6 +7,49 @@ from models import db, Alarm, User, Review
 from auth import require_api_key  # Import middleware from auth.py
 from flask_cors import CORS
 
+# Google Calendar Implementation
+from datetime import datetime, timedelta 
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from dotenv import load_dotenv
+
+# Password encryption
+from cryptography.fernet import Fernet
+
+load_dotenv()
+
+COOKIE_KEY = os.getenv('COOKIE_KEY')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_PROJECT_ID = os.getenv('GOOGLE_PROJECT_ID')
+GOOGLE_AUTH_URI = os.getenv('GOOGLE_AUTH_URI')
+GOOGLE_TOKEN_URI = os.getenv('GOOGLE_TOKEN_URI')
+GOOGLE_AUTH_PROVIDER_X509_CERT_URL = os.getenv('GOOGLE_AUTH_PROVIDER_X509_CERT_URL')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+GOOGLE_REDIRECT_URIS = os.getenv('GOOGLE_REDIRECT_URIS')
+GOOGLE_JAVASCRIPT_ORIGINS = os.getenv('GOOGLE_JAVASCRIPT_ORIGINS')
+
+FERNET_KEY=os.getenv('FERNET_KEY')
+fernet = Fernet(FERNET_KEY)
+
+clientConfig = {
+    "web": {
+        "client_id":GOOGLE_CLIENT_ID,
+        "project_id":GOOGLE_PROJECT_ID,
+        "auth_uri":GOOGLE_AUTH_URI,
+        "token_uri":GOOGLE_TOKEN_URI,
+        "auth_provider_x509_cert_url":GOOGLE_AUTH_PROVIDER_X509_CERT_URL,
+        "client_secret":GOOGLE_CLIENT_SECRET,
+        "redirect_uris":[GOOGLE_REDIRECT_URIS],
+        "javascript_origins":[GOOGLE_JAVASCRIPT_ORIGINS]
+    }
+}
+
+# Allow Google login from HTTP
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 # Create a Flask application instance
 app = Flask(__name__)
 CORS(app)
@@ -373,6 +416,27 @@ def postAlarm(id):
     else:
         return jsonify({"error": "Alarm with id already exists"}), 400
 
+# given users username and password in a json returns authentication
+@app.route('/api/login', methods = ['GET'])
+@require_api_key  # Applies middleware
+def loginUser():
+    loginDetails = request.get_json()
+    if not loginDetails:
+        return jsonify({"error": "not found"}), 404
+
+    row = db.session.execute(select(User).where(User.username == loginDetails["username"])).first()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    
+    user = row[0]
+
+    decryptedDatabasePass=(fernet.decrypt(bytes.fromhex(user.password))).decode()
+
+    if (decryptedDatabasePass==loginDetails["password"]):
+        return {"Details": "Accepted"}
+    else:
+        return {"Details": "Rejected"}    
+
 # Retrives user json given users ID in url
 @app.route('/api/user/<int:id>', methods = ['GET'])
 @require_api_key  # Applies middleware
@@ -495,6 +559,11 @@ def getAlarmReviews(alarmIdGiven):
                 "href": f"/api/reviews/{alarmIdGiven}",
                 "rel": "this",
                 "method": "GET"
+            },
+            {
+                "href": f"/api/rating/{alarmIdGiven}",
+                "rel": "score",
+                "method": "GET"
             }]
     }
 
@@ -502,6 +571,41 @@ def getAlarmReviews(alarmIdGiven):
 
     return jsonify(reviews)
 
+# Retrives an alarm's average rating as json given the alarms ID in url
+@app.route('/api/rating/<int:alarmIdGiven>', methods = ['GET'])
+@require_api_key  # Applies middleware
+def getAlarmRating(alarmIdGiven):
+    # Returns json containing all the reviews pertaining to the alarm whose alarm id is in the url
+    rows = db.session.execute(select(Review.reviewRating).where(Review.alarmId == alarmIdGiven))
+    if not rows:
+        return jsonify({"error": "not found"}), 404
+    x = 0
+
+    reviews = []
+
+    for row in rows:
+        reviews.append(row[0])
+
+    noReviews=0
+    totalScore=0
+    avgScore=0
+    for reviewScore in reviews:
+        noReviews+=1
+        totalScore+=reviewScore
+        
+    avgScore = round(totalScore/noReviews,1)
+
+    links = {
+        "_links" : [
+            {
+                "href": f"/api/reviews/{alarmIdGiven}",
+                "rel": "reviews",
+                "method": "GET"
+            }]
+    }
+
+    #print (f"Score {avgScore}")
+    return jsonify({"Score":avgScore}, links)
 
 # Posts new review given json of new review and given the alarms ID in url
 @app.route('/api/reviews/<int:alarmIdGiven>', methods = ['POST'])
@@ -517,6 +621,7 @@ def postAlarmReview(alarmIdGiven):
             userId = review["userId"],
             alarmId = alarmIdGiven,
             reviewText = review["reviewText"],
+            reviewRating = review["reviewRating"]
         )
         db.session.add(newReview)               # Add the new review to the database session
         db.session.commit()                     # Commit changes to the database
