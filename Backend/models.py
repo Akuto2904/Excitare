@@ -19,7 +19,9 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     username = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    chosenAlarmId = db.Column(db.Integer, nullable=False)
+    refreshToken = db.Column(db.String(1000), nullable=False, default="none")
+    chosenCalendarID = db.Column(db.String(200), nullable=False, default="none")
+    chosenAlarmId = db.Column(db.Integer, nullable=False, default="none")
     # Used to convert the object into a dictionary type allowing easy json conversion
     def asdict(self):
         return {'id': self.id, 'name': self.name, 'username': self.username, 'password': self.password, 'chosenAlarmId' : self.chosenAlarmId}
