@@ -58,14 +58,14 @@ app.secret_key = COOKIE_KEY
 CORS(app)
 
 # Store the database inside the project directory (database/database.db)
-db_folder = os.path.join(os.getcwd(), "database")
-db_path = os.path.join(db_folder, "database.db")
+dbFolder = os.path.join(os.getcwd(), "database")
+dbPath = os.path.join(dbFolder, "database.db")
 
 # Ensure the database directory exists
-os.makedirs(db_folder, exist_ok=True)
+os.makedirs(dbFolder, exist_ok=True)
 
 # Configure the SQLite database location
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{dbPath}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database with the app
@@ -817,7 +817,7 @@ def classTime(userID):
 if __name__ == '__main__':
     with app.app_context():     # Ensures the Flask application knows we're operating within its context, preventing errors.
         db.create_all()         # Tells SQLAlchemy to create all database tables based on defined models in models.py
-        print(f"Database tables created successfully at {db_path}")
+        print(f"Database tables created successfully at {dbPath}")
         
     # Run the flask app
     app.run(debug=True)
