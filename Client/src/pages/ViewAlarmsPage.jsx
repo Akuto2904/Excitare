@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import { getAlarms } from '../services/alarmService';
 import { useAuth } from '../auth/AuthContext';
+import { getAlarmRating } from '../services/reviewService';
 import '../styles/alarms.css';
 import '../styles/main-menu.css';
 import logo from '../assets/logo.png';
@@ -35,23 +36,41 @@ function ViewAlarmsPage() {
     localStorage.getItem('currentAlarmName') || 'Not set yet';
 
   // Runs once when the page loads
-  useEffect(() => {
-    const fetchAlarms = async () => {
-      try {
-        // Gets all alarms from the backend API
-        const data = await getAlarms();
-        setAlarms(data);
-      } catch (err) {
-        setError('Failed to load alarms.');
-        console.error(err);
-      } finally {
-        // Stops the loading message once the request has finished
-        setLoading(false);
-      }
-    };
+ useEffect(() => {
+  const fetchAlarms = async () => {
+    try {
+      // Gets all alarms from the backend API
+      const data = await getAlarms();
 
-    fetchAlarms();
-  }, []);
+      // Gets average rating for each alarm
+      const alarmsWithRatings = await Promise.all(
+        data.map(async (alarm) => {
+          try {
+            const ratingData = await getAlarmRating(alarm.id);
+            return {
+              ...alarm,
+              averageRating: ratingData.Score ?? 'N/A',
+            };
+          } catch (err) {
+            return {
+              ...alarm,
+              averageRating: 'N/A',
+            };
+          }
+        })
+      );
+
+      setAlarms(alarmsWithRatings);
+    } catch (err) {
+      setError('Failed to load alarms.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAlarms();
+}, []);
 
   // Loading state
   if (loading) {
@@ -116,7 +135,7 @@ function ViewAlarmsPage() {
                 <span className="alarm-button-name">{alarm.name}</span>
 
                 {/* Rating is a placeholder for now because backend does not return one yet */}
-                <span className="alarm-button-rating">⭐ N/A</span>
+                <span className="alarm-button-rating">⭐ {alarm.averageRating}</span>
               </Link>
             ))}
           </div>
