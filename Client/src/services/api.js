@@ -2,7 +2,7 @@
 const API_BASE = "http://localhost:5000/api";
 
 // API key (Frontend App key)
-const API_KEY = "bffbcfe48bc96482c981f390694ade0a21c454906f707d6871b72dd36437679e";
+const API_KEY = "06abce352a6e9aab3e6c59d8a6e6619535e36385b92d094cb4640dece149a1f6";
 
 // Function to make API requests
 export async function apiRequest(endpoint, options = {}) {
