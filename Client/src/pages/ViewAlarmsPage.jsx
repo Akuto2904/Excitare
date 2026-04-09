@@ -15,8 +15,10 @@ function ViewAlarmsPage() {
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState("");
 
-   //Temp plceholder until current chosen alarm is connected properly
-   const currentAlarm = 'Not set yet';
+   
+   // Gets the currently selected alarm from local storage
+   const currentAlarm =
+   localStorage.getItem('currentAlarmName') || 'Not set yet';
 
 
    //Runs once when the page loads
