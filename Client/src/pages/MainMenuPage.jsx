@@ -1,11 +1,15 @@
 /* allows users to view their current alarm, browse other alarms, and access settings */
 import { Link } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../auth/AuthContext';
 import '../styles/main-menu.css';
 import logo from '../assets/logo.png';
 
 function MainMenuPage() {
- // Gets the current selected alarm from local storage
+ //gets logout function from AuthContext
+  const { logout } = useAuth();
+ 
+  // Gets the current selected alarm from local storage
   const currentAlarmName =
     localStorage.getItem('currentAlarmName') || 'Not set yet';
 
@@ -34,7 +38,7 @@ function MainMenuPage() {
         </div>
 
         <div className="navbar-right">
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={logout}>
             <FiLogOut className="logout-icon" />
             Log Out
           </button>
@@ -47,10 +51,20 @@ function MainMenuPage() {
         {/* Top section: current alarm info */}
         <div className="dashboard-card current-alarm-card">
           <h2 className="section-heading">Current Alarm</h2>
-          <h2 className="alarm-name">{currentAlarmName}</h2>
-          <p className="alarm-rating">Average Rating: {currentAlarmRating}/ 5</p>
+
+          <h2 className="alarm-name">
+            {currentAlarmName === 'Not set yet'
+              ? 'No alarm selected'
+              : currentAlarmName}
+          </h2>
+
+          <p className="alarm-rating">
+            Average Rating: {currentAlarmRating} / 5
+          </p>
+
           <p className="alarm-description">{currentAlarmDescription}</p>
-        </div>
+        </div> 
+
 
         {/* Bottom section - View alarms and settings */}
         <div className="bottom-card-row">
