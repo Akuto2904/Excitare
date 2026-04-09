@@ -1,4 +1,6 @@
-//Page for showing details of a specific alarm, including reviews and option to set as current alarm.
+// Page for showing details of a specific alarm, including reviews
+// and option to set as current alarm.
+
 import { Link, useParams } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import '../styles/main-menu.css';
@@ -7,12 +9,13 @@ import logo from '../assets/logo.png';
 import { useEffect, useState } from 'react';
 import { getAlarmById } from '../services/alarmService';
 import { getReviewsByAlarmId } from '../services/reviewService';
+import { updateUserChosenAlarm } from '../services/userService';
 
 function AlarmDetailPage() {
-  //Gets the alarm id frm the URL
+  // Gets the alarm id from the URL
   const { id } = useParams();
-  
-   // Stores the selected alarm data from the backend
+
+  // Stores the selected alarm data from the backend
   const [alarm, setAlarm] = useState(null);
 
   // Stores the reviews for this alarm
@@ -24,6 +27,10 @@ function AlarmDetailPage() {
   // Loading and error states for better UX
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Temp success/error message for setting current alarm
+  const [setAlarmMessage, setSetAlarmMessage] = useState('');
+  const [settingAlarm, setSettingAlarm] = useState(false);
 
   // Runs when the page loads or when the alarm id changes
   useEffect(() => {
@@ -48,6 +55,37 @@ function AlarmDetailPage() {
     fetchAlarmData();
   }, [id]);
 
+  // Temporary user until real login is added
+  const tempUser = {
+    id: 1,
+    name: 'Test User',
+    username: 'testuser',
+    password: 'testpassword',
+    chosenAlarmId: alarm?.id,
+  };
+
+  // Handles setting the current alarm
+  const handleSetCurrentAlarm = async () => {
+    try {
+      setSettingAlarm(true);
+      setSetAlarmMessage('');
+
+      const updatedUser = {
+        ...tempUser,
+        chosenAlarmId: alarm.id,
+      };
+
+      await updateUserChosenAlarm(updatedUser);
+
+      setSetAlarmMessage('Current alarm updated successfully.');
+    } catch (err) {
+      setSetAlarmMessage('Failed to set current alarm.');
+      console.error(err);
+    } finally {
+      setSettingAlarm(false);
+    }
+  };
+
   // Show loading message while data is being fetched
   if (loading) {
     return <p className="container py-5">Loading alarm details...</p>;
@@ -62,9 +100,9 @@ function AlarmDetailPage() {
   if (!alarm) {
     return <p className="container py-5">Alarm not found.</p>;
   }
- return ( 
 
-    <div className="container py-5" >
+  return (
+    <div className="container py-5">
       {/* Top navigation bar */}
       <div className="main-menu-navbar">
         <div className="navbar-left">
@@ -93,9 +131,9 @@ function AlarmDetailPage() {
 
           <div className="alarm-title-block">
             <h2 className="alarm-title">{alarm.name}</h2>
-           
-           {/*rating is still a placehole*/}
-            <p className="alarm-rating">⭐ {alarm.rating} / 5</p>
+
+            {/* Rating is still a placeholder until backend rating is added */}
+            <p className="alarm-rating">⭐ N/A / 5</p>
           </div>
         </div>
 
@@ -119,9 +157,19 @@ function AlarmDetailPage() {
           </select>
         </div>
 
-        {/* Set current alarm button */}
+        {/* Set as current alarm button */}
         <div className="alarm-detail-section">
-          <button className="set-alarm-btn">Set as Current Alarm</button>
+          <button
+            className="set-alarm-btn"
+            onClick={handleSetCurrentAlarm}
+            disabled={settingAlarm}
+          >
+            {settingAlarm ? 'Setting Alarm...' : 'Set as Current Alarm'}
+          </button>
+
+          {setAlarmMessage && (
+            <p className="set-alarm-message">{setAlarmMessage}</p>
+          )}
         </div>
 
         {/* Reviews from backend */}
