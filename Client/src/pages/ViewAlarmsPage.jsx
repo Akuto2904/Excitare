@@ -1,6 +1,6 @@
 // Displays a list of available alarms
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import { getAlarms } from '../services/alarmService';
 import { useAuth } from '../auth/AuthContext';
@@ -11,6 +11,17 @@ import logo from '../assets/logo.png';
 function ViewAlarmsPage() {
   // Gets the logout function from AuthContext
   const { logout } = useAuth();
+
+  // Used to redirect user after logout
+  const navigate = useNavigate();
+
+  // Handles logout
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('currentAlarmName');
+    localStorage.removeItem('currentAlarmId');
+    navigate('/');
+  };
 
   // Stores the alarms returned from the backend
   const [alarms, setAlarms] = useState([]);
@@ -65,7 +76,7 @@ function ViewAlarmsPage() {
         </div>
 
         <div className="navbar-right">
-          <button className="logout-btn" onClick={logout}>
+          <button className="logout-btn" onClick={handleLogout}>
             <FiLogOut className="logout-icon" />
             Log Out
           </button>
