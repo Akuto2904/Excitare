@@ -1,81 +1,66 @@
-// login page for users to access the app
-import { useNavigate, Link } from 'react-router-dom';
-
-//page specific styling
-import '../styles/login.css';
-
+import { Link, useNavigate } from 'react-router-dom';
+import { FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../auth/AuthContext';
+import '../styles/main-menu.css';
+import '../styles/settings.css';
 import logo from '../assets/logo.png';
 
-//redirects the user to another page
-function LoginPage() {
+function SettingsPage() {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  //Handles login form submission
-  const handleSubmit = (e) => {
-    e.preventDefault(); //stops page reload
-    
-    //temporary nav ( gonna replace with API login later)
-    navigate('/menu');
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('currentAlarmName');
+    localStorage.removeItem('currentAlarmId');
+    navigate('/');
   };
 
   return (
-    <div className="container page-wrapper">
-      <div className="login-card mx-auto page-card">
-        
-        {/* App title */}
-           <h1 className="text-center mb-3 app-title">Excitare</h1>
-        
-        {/*App logo */} 
-        <div className="text-center mb-3"> 
-          <img src={logo} alt="Excitare Logo" className="logo" />
+    <div className="container py-5">
+      {/* Navbar */}
+      <div className="main-menu-navbar">
+        <div className="navbar-left">
+          <img src={logo} alt="Excitare logo" className="navbar-logo" />
         </div>
 
+        <div className="navbar-center">
+          <h1 className="navbar-title">Excitare</h1>
+        </div>
 
-        
-        {/*Login form*/}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-           <label htmlFor="email" className="form-label form-label-custom">
-             Email
-           </label>
-            
-           {/*Email input field*/}
-            <input
-              type="email"
-              id="email"
-              className="form-control"
-              required
-            />
-          </div>
-
-           {/*Password input field*/}
-          <div className="mb-4">
-            <label htmlFor="password" className="form-label form-label-custom">
-             Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="form-control"
-              required
-            />
-          </div>
- 
-         {/*Submut button*/}
-          <button type="submit" className="btn login-btn w-100">
-            Sign In
+        <div className="navbar-right">
+          <button className="logout-btn" onClick={handleLogout}>
+            <FiLogOut className="logout-icon" />
+            Log Out
           </button>
+        </div>
+      </div>
 
-{/*Forgot password link*/} 
-<div className="text-center mt-3">
-  <Link to="/forgot-password" className="forgot-password-link">
-  Forgot password?
-           </Link>
-         </div>
-        </form>
+      {/* Correct styled card */}
+      <div className="settings-card">
+        <div className="settings-header">
+          <Link to="/menu" className="back-btn">
+            Back
+          </Link>
+          <h2 className="settings-title">Settings</h2>
+        </div>
+
+        <div className="settings-section">
+          <h3 className="settings-section-heading">Account</h3>
+          <p className="settings-text">Email: {user?.email}</p>
+          <p className="settings-text">Role: {user?.role}</p>
+          <p className="settings-text">Status: {user?.status}</p>
+        </div>
+
+        <div className="settings-section">
+          <h3 className="settings-section-heading">Google Calendar</h3>
+          <p className="settings-text">
+            Calendar connection will be managed here.
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
-export default LoginPage;
+export default SettingsPage;
