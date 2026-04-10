@@ -12,3 +12,11 @@ export const getReviewsByAlarmId = async (alarmId) => {
 export const getAlarmRating = async (alarmId) => {
   return await apiRequest(`/rating/${alarmId}`);
 };
+
+//submit a review for a specific alarrm
+export const submitReview = async (alarmId, reviewData) => {
+  return await apiRequest(`/reviews/${alarmId}`, {
+    method: "POST",
+    body: JSON.stringify(reviewData),
+  });
+};

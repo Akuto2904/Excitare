@@ -36,41 +36,44 @@ function ViewAlarmsPage() {
     localStorage.getItem('currentAlarmName') || 'Not set yet';
 
   // Runs once when the page loads
- useEffect(() => {
-  const fetchAlarms = async () => {
-    try {
-      // Gets all alarms from the backend API
-      const data = await getAlarms();
+  useEffect(() => {
+    const fetchAlarms = async () => {
+      try {
+        // Gets all alarms from the backend API
+        const data = await getAlarms();
 
-      // Gets average rating for each alarm
-      const alarmsWithRatings = await Promise.all(
-        data.map(async (alarm) => {
-          try {
-            const ratingData = await getAlarmRating(alarm.id);
-            return {
-              ...alarm,
-              averageRating: ratingData.Score ?? 'N/A',
-            };
-          } catch (err) {
-            return {
-              ...alarm,
-              averageRating: 'N/A',
-            };
-          }
-        })
-      );
+        // Gets average rating for each alarm
+        const alarmsWithRatings = await Promise.all(
+          data.map(async (alarm) => {
+            try {
+              const ratingData = await getAlarmRating(alarm.id);
 
-      setAlarms(alarmsWithRatings);
-    } catch (err) {
-      setError('Failed to load alarms.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+              return {
+                ...alarm,
+                averageRating: ratingData.Score ?? 'N/A',
+              };
+            } catch (err) {
+              console.error(`Failed to load rating for alarm ${alarm.id}`, err);
 
-  fetchAlarms();
-}, []);
+              return {
+                ...alarm,
+                averageRating: 'N/A',
+              };
+            }
+          })
+        );
+
+        setAlarms(alarmsWithRatings);
+      } catch (err) {
+        setError('Failed to load alarms.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlarms();
+  }, []);
 
   // Loading state
   if (loading) {
@@ -133,9 +136,9 @@ function ViewAlarmsPage() {
                 key={alarm.id}
               >
                 <span className="alarm-button-name">{alarm.name}</span>
-
-                {/* Rating is a placeholder for now because backend does not return one yet */}
-                <span className="alarm-button-rating">⭐ {alarm.averageRating}</span>
+                <span className="alarm-button-rating">
+                  ⭐ {alarm.averageRating ?? 'N/A'}
+                </span>
               </Link>
             ))}
           </div>
