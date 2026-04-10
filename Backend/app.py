@@ -844,7 +844,7 @@ def calendars(userID):
         return jsonify({"error": f"An error occurred: {error}"}), 500
 
 # Given a calendarID in a JSON, sets the user in url's chosen calendar
-@app.route("/setCalendar/<string:userID>", methods=["PUT"])
+@app.route("/api/setCalendar/<string:userID>", methods=["PUT"])
 @require_api_key
 def setCalendar(userID):
     requestMade = request.get_json()

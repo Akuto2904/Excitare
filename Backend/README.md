@@ -82,7 +82,7 @@ Inside directory /Backend/ run command: python app.py
 
            **GET** Endpoint - Returns JSON of users google calendars to make a selection with
 
-        @ Route: /setCalendar/<string:userID>
+        @ Route: /api/setCalendar/<string:userID>
 
            **PUT** Endpoint - Given a calendarID in a JSON, sets the user in url's chosen calendar
         
