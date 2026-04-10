@@ -1,0 +1,10 @@
+flask 
+sqlalchemy
+flask_restful
+flask_sqlalchemy 
+Flask-CORS
+google-api-python-client 
+google-auth-httplib2 
+google-auth-oauthlib
+cryptography
+python-dotenv

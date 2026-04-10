@@ -18,13 +18,16 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     username = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(5), nullable=False, default="user")
+    status = db.Column(db.String(8), nullable=False, default="free")
     password = db.Column(db.String(200), nullable=False)
     refreshToken = db.Column(db.String(1000), nullable=False, default="none")
     chosenCalendarID = db.Column(db.String(200), nullable=False, default="none")
     chosenAlarmId = db.Column(db.Integer, nullable=False, default="none")
     # Used to convert the object into a dictionary type allowing easy json conversion
     def asdict(self):
-        return {'id': self.id, 'name': self.name, 'username': self.username, 'password': self.password, 'chosenAlarmId' : self.chosenAlarmId}
+        return {'id': self.id, 'name': self.name, 'username': self.username, 'email':self.email, 'password': self.password, 'chosenAlarmId' : self.chosenAlarmId}
 
 # Used to represent the review table's data in database
 class Review(db.Model):
