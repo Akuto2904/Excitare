@@ -231,7 +231,7 @@ class alarmsAPI(Resource):
               type: object
               properties:
                 id:
-                  type: string
+                  type: integer
         responses:
           200:
             description: Alarm deleted successfully!
@@ -355,7 +355,7 @@ def postAlarm(id):
         return jsonify({"error": "Alarm with id already exists"}), 400
 
     newAlarm = Alarm(
-        id=alarm["id"],
+        id=id,
         name=alarm["name"],
         description=alarm["description"],
     )
@@ -505,7 +505,7 @@ class usersAPI(Resource):
               type: object
               properties:
                 id:
-                  type: string
+                  type: integer
                 name:
                   type: string
                 username:
@@ -581,7 +581,7 @@ class usersAPI(Resource):
               type: object
               properties:
                 id:
-                  type: string
+                  type: integer
                 name:
                   type: string
                 username:
@@ -655,7 +655,7 @@ class usersAPI(Resource):
               type: object
               properties:
                 id:
-                  type: string
+                  type: integer
         responses:
           200:
             description: User deleted successfully!
@@ -913,13 +913,17 @@ def postAlarmReview(alarmIdGiven):
         in: body
         required: true
         schema:
+          id: reviewPostObject
+          type: object
           properties:
+            id:
+              type: integer
             userId:
               type: string
             reviewText:
               type: string
             reviewRating:
-              type: string
+              type: integer
     responses:
       200:
         description: New review added successfully!
@@ -998,7 +1002,7 @@ def deleteAlarmReview():
           type: object
           properties:
             id:
-              type: string
+              type: integer
     responses:
       200:
         description: New review added successfully!
@@ -1165,7 +1169,7 @@ def calendars(userID):
     user = User.query.filter_by(id=userID).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
-
+    
     sessionCredentials = Credentials(
         token=None,
         refresh_token=user.refreshToken,
