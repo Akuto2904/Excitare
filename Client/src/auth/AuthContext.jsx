@@ -11,6 +11,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
 
+//Read saved user from sessionStorage on first load
 const readInitialUser = () => {
   try {
     const raw = window.sessionStorage.getItem('authUser');
@@ -19,6 +20,12 @@ const readInitialUser = () => {
     return null;
   }
 };
+
+//API keys
+const API_BASE = 'http://localhost:5000/api';
+const API_KEY = '06abce352a6e9aab3e6c59d8a6e6619535e36385b92d094cb4640dece149a1f6';
+
+
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(readInitialUser);
@@ -38,19 +45,46 @@ export const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
-      // Placeholder implementation – replace with real API call.
-      // Example:
-      // const res = await fetch('/api/auth/login', { method: 'POST', ... });
-      // const data = await res.json();
-      // setUser({ id: data.id, email: data.email, role: data.role });
+      // Backend currently expects GET /api/login with a JSON body
+      const response = await fetch(`${API_BASE}/login`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': API_KEY,
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Temporary: treat a specific email as admin for front-end testing.
-      const role = email === 'admin@example.com' ? 'admin' : 'user';
-      const fakeUser = { id: 1, email, role };
-      setUser(fakeUser);
-      return fakeUser;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Login request failed.');
+      }
+      
+if (data.Details !== 'Accepted') {
+        setError('Incorrect email or password.');
+        throw new Error('Incorrect email or password.');
+      }
+
+      if (data.userStatus === 'locked') {
+        setError('Your account is locked. Please contact an admin.');
+        throw new Error('Account is locked.');
+      }
+
+      // Backend does not return userId yet, so a temporary id bridge for now
+      const loggedInUser = {
+        id: 1,
+        email,
+        role: data.userRole || 'user',
+        status: data.userStatus || 'free',
+      };
+
+      setUser(loggedInUser);
+      return loggedInUser;
     } catch (err) {
-      setError('Login failed – please try again.');
+      if (!error) {
+        setError(err.message || 'Login failed. Please try again.');
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -59,12 +93,15 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setError(null);
+    window.sessionStorage.removeItem('authUser');
   };
 
   const value = { user, loading, error, login, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
