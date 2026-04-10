@@ -8,7 +8,11 @@ import '../styles/alarm-detail.css';
 import logo from '../assets/logo.png';
 import { useEffect, useState } from 'react';
 import { getAlarmById } from '../services/alarmService';
-import { getReviewsByAlarmId, getAlarmRating } from '../services/reviewService';
+import {
+  getReviewsByAlarmId,
+  getAlarmRating,
+  submitReview,
+} from '../services/reviewService';
 import { updateUserChosenAlarm } from '../services/userService';
 import { useAuth } from '../auth/AuthContext';
 
@@ -36,7 +40,10 @@ function AlarmDetailPage() {
   // Stores the reviews for this alarm
   const [reviews, setReviews] = useState([]);
 
-  // Used for the temporary frontend star rating input
+  // Stores review form text
+  const [reviewText, setReviewText] = useState('');
+
+  // Used for the frontend star rating input
   const [rating, setRating] = useState(0);
 
   // Loading and error states for better UX
@@ -47,34 +54,39 @@ function AlarmDetailPage() {
   const [setAlarmMessage, setSetAlarmMessage] = useState('');
   const [settingAlarm, setSettingAlarm] = useState(false);
 
+  // Stores the average rating from backend
   const [averageRating, setAverageRating] = useState('N/A');
 
+  // Review submit state
+  const [reviewMessage, setReviewMessage] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   // Runs when the page loads or when the alarm id changes
- useEffect(() => {
-  const fetchAlarmData = async () => {
-    try {
-      // Fetch the selected alarm from the backend
-      const alarmData = await getAlarmById(id);
+  useEffect(() => {
+    const fetchAlarmData = async () => {
+      try {
+        // Fetch the selected alarm from the backend
+        const alarmData = await getAlarmById(id);
 
-      // Fetch reviews for this alarm from the backend
-      const reviewData = await getReviewsByAlarmId(id);
+        // Fetch reviews for this alarm from the backend
+        const reviewData = await getReviewsByAlarmId(id);
 
-      // Fetch average rating for this alarm
-      const ratingData = await getAlarmRating(id);
+        // Fetch average rating for this alarm
+        const ratingData = await getAlarmRating(id);
 
-      setAlarm(alarmData);
-      setReviews(reviewData);
-      setAverageRating(ratingData.Score ?? 'N/A');
-    } catch (err) {
-      setError('Failed to load alarm details.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setAlarm(alarmData);
+        setReviews(reviewData);
+        setAverageRating(ratingData.Score ?? 'N/A');
+      } catch (err) {
+        setError('Failed to load alarm details.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchAlarmData();
-}, [id]);
+    fetchAlarmData();
+  }, [id]);
 
   // Handles setting the current alarm
   const handleSetCurrentAlarm = async () => {
@@ -110,6 +122,55 @@ function AlarmDetailPage() {
       console.error(err);
     } finally {
       setSettingAlarm(false);
+    }
+  };
+
+  // Handles submitting a new review
+  const handleSubmitReview = async () => {
+    if (!user || !alarm) {
+      setReviewMessage('No user or alarm found.');
+      return;
+    }
+
+    if (!reviewText.trim()) {
+      setReviewMessage('Please enter a review.');
+      return;
+    }
+
+    if (rating === 0) {
+      setReviewMessage('Please choose a rating.');
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      setReviewMessage('');
+
+      const reviewPayload = {
+        id: Date.now(), // temporary unique id
+        userId: user.id,
+        reviewText: reviewText,
+        reviewRating: rating,
+      };
+
+      await submitReview(alarm.id, reviewPayload);
+
+      // Clear form
+      setReviewText('');
+      setRating(0);
+      setReviewMessage('Review submitted successfully.');
+
+      // Refresh reviews and rating
+      const updatedReviews = await getReviewsByAlarmId(id);
+      const updatedRating = await getAlarmRating(id);
+
+      setReviews(updatedReviews);
+      setAverageRating(updatedRating.Score ?? 'N/A');
+    } catch (err) {
+      setReviewMessage('Failed to submit review.');
+      console.error(err);
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -158,8 +219,6 @@ function AlarmDetailPage() {
 
           <div className="alarm-title-block">
             <h2 className="alarm-title">{alarm.name}</h2>
-
-            {/* Rating is still a placeholder until backend rating is added */}
             <p className="alarm-rating">⭐ {averageRating} / 5</p>
           </div>
         </div>
@@ -203,18 +262,19 @@ function AlarmDetailPage() {
         <div className="alarm-detail-section">
           <h3 className="detail-section-heading">Reviews</h3>
 
-          {reviews.length === 0 ? (
+          {reviews.filter((review) => review.reviewText).length === 0 ? (
             <p className="no-reviews-text">No reviews yet.</p>
           ) : (
             <div className="reviews-list">
               {reviews
-               .filter((review) => review.reviewText)
-               .map((review, index) => (
-    <div key={`${review.id}-${index}`} className="review-card">
-                  <p className="review-card-heading">User Review</p>
-                  <p className="review-text">{review.reviewText}</p>
-                </div>
-              ))}
+                .filter((review) => review.reviewText)
+                .map((review, index) => (
+                  <div key={`${review.id}-${index}`} className="review-card">
+                    <p className="review-card-heading">User Review</p>
+                    <p className="review-text">{review.reviewText}</p>
+                    <p className="review-text">Rating: ⭐ {review.reviewRating}</p>
+                  </div>
+                ))}
             </div>
           )}
         </div>
@@ -227,7 +287,6 @@ function AlarmDetailPage() {
             <div className="mb-3">
               <label className="form-label review-label">Rating</label>
 
-              {/* Temporary frontend star selector */}
               <div className="star-rating">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span
@@ -250,10 +309,22 @@ function AlarmDetailPage() {
                 className="form-control review-textarea"
                 rows="4"
                 placeholder="Write your review here..."
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
               ></textarea>
             </div>
 
-            <button className="submit-review-btn">Submit Review</button>
+            <button
+              className="submit-review-btn"
+              onClick={handleSubmitReview}
+              disabled={submittingReview}
+            >
+              {submittingReview ? 'Submitting...' : 'Submit Review'}
+            </button>
+
+            {reviewMessage && (
+              <p className="set-alarm-message">{reviewMessage}</p>
+            )}
           </div>
         </div>
       </div>
