@@ -39,7 +39,7 @@ const AdminLoginPage = () => {
       <div className="page-card login-card">
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <img
-            src="/PlaceHolder.jpg"
+            src="../assets/logo.png"
             alt="Alarm admin logo"
             className="login-logo"
           />
