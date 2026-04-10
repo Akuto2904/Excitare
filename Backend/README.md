@@ -7,6 +7,7 @@ The database stores, alarm info, review info and user info.
 # How to run: 
 
 Inside directory /Backend/ run command: python app.py
+Inside directory / Client/ run command: npm run dev
 
 # Endpoints implemented:
 ##      Alarms: 
@@ -175,7 +176,6 @@ PUT /setCalendar/:userID
 
 GET /api/:userID/firstClass
 -Retrieves next class information
--
 
 
 
