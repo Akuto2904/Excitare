@@ -8,7 +8,7 @@ import '../styles/alarm-detail.css';
 import logo from '../assets/logo.png';
 import { useEffect, useState } from 'react';
 import { getAlarmById } from '../services/alarmService';
-import { getReviewsByAlarmId } from '../services/reviewService';
+import { getReviewsByAlarmId, getAlarmRating } from '../services/reviewService';
 import { updateUserChosenAlarm } from '../services/userService';
 import { useAuth } from '../auth/AuthContext';
 
@@ -47,28 +47,34 @@ function AlarmDetailPage() {
   const [setAlarmMessage, setSetAlarmMessage] = useState('');
   const [settingAlarm, setSettingAlarm] = useState(false);
 
+  const [averageRating, setAverageRating] = useState('N/A');
+
   // Runs when the page loads or when the alarm id changes
-  useEffect(() => {
-    const fetchAlarmData = async () => {
-      try {
-        // Fetch the selected alarm from the backend
-        const alarmData = await getAlarmById(id);
+ useEffect(() => {
+  const fetchAlarmData = async () => {
+    try {
+      // Fetch the selected alarm from the backend
+      const alarmData = await getAlarmById(id);
 
-        // Fetch reviews for this alarm from the backend
-        const reviewData = await getReviewsByAlarmId(id);
+      // Fetch reviews for this alarm from the backend
+      const reviewData = await getReviewsByAlarmId(id);
 
-        setAlarm(alarmData);
-        setReviews(reviewData);
-      } catch (err) {
-        setError('Failed to load alarm details.');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      // Fetch average rating for this alarm
+      const ratingData = await getAlarmRating(id);
 
-    fetchAlarmData();
-  }, [id]);
+      setAlarm(alarmData);
+      setReviews(reviewData);
+      setAverageRating(ratingData.Score ?? 'N/A');
+    } catch (err) {
+      setError('Failed to load alarm details.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAlarmData();
+}, [id]);
 
   // Handles setting the current alarm
   const handleSetCurrentAlarm = async () => {
@@ -154,7 +160,7 @@ function AlarmDetailPage() {
             <h2 className="alarm-title">{alarm.name}</h2>
 
             {/* Rating is still a placeholder until backend rating is added */}
-            <p className="alarm-rating">⭐ N/A / 5</p>
+            <p className="alarm-rating">⭐ {averageRating} / 5</p>
           </div>
         </div>
 
@@ -201,8 +207,10 @@ function AlarmDetailPage() {
             <p className="no-reviews-text">No reviews yet.</p>
           ) : (
             <div className="reviews-list">
-              {reviews.map((review, index) => (
-                <div key={review.id || index} className="review-card">
+              {reviews
+               .filter((review) => review.reviewText)
+               .map((review, index) => (
+    <div key={`${review.id}-${index}`} className="review-card">
                   <p className="review-card-heading">User Review</p>
                   <p className="review-text">{review.reviewText}</p>
                 </div>
