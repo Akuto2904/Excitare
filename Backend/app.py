@@ -545,8 +545,8 @@ class usersAPI(Resource):
             matchingUser.status = user["status"]
         if user.get("role") is not None:
             matchingUser.role = user["role"]
-        if user.get("password") is not None:
-            matchingUser.password = fernet.encrypt((user["password"]).encode()).hex()
+        if user.get("password") is not None and user["password"] != "":
+            matchingUser.password = fernet.encrypt(user["password"].encode()).hex()
         if user.get("chosenAlarmId") is not None:
             matchingUser.chosenAlarmId = user["chosenAlarmId"]
 

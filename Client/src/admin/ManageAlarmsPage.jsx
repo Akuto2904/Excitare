@@ -1,108 +1,305 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAlarms } from '../services/alarmService';
+import { apiRequest } from '../services/api';
 import '../styles/alarms.css';
 
-// Temporary review data – replace with real alarm + review payloads from the API.
-const seedAlarms = [
-  {
-    id: 1,
-    name: 'Gentle Sunrise',
-    averageRating: 4.7,
-    reviews: [
-      { id: 1, author: 'student1@example.com', text: 'Lovely way to wake up.', flagged: false },
-      { id: 2, author: 'student2@example.com', text: 'Too quiet for heavy sleepers.', flagged: false },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Intense Ringtone',
-    averageRating: 3.2,
-    reviews: [
-      { id: 3, author: 'student3@example.com', text: 'Way too aggressive!!', flagged: false },
-      { id: 4, author: 'student4@example.com', text: 'Perfect if you always sleep through alarms.', flagged: false },
-    ],
-  },
-];
+const emptyAlarmForm = {
+  id: '',
+  name: '',
+  description: '',
+};
 
 const ManageAlarmsPage = () => {
   const [alarms, setAlarms] = useState([]);
   const [selectedAlarmId, setSelectedAlarmId] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [alarmForm, setAlarmForm] = useState(emptyAlarmForm);
+  const [editingAlarmId, setEditingAlarmId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadAlarms = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await apiRequest('/alarms');
+      const alarmList = Array.isArray(data) ? data : [];
+      setAlarms(alarmList);
+
+      if (alarmList.length > 0 && !selectedAlarmId) {
+        setSelectedAlarmId(alarmList[0].id);
+      }
+
+      if (alarmList.length === 0) {
+        setSelectedAlarmId(null);
+        setReviews([]);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load alarms.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadReviews = async (alarmId) => {
+    if (!alarmId) {
+      setReviews([]);
+      return;
+    }
+
+    try {
+      setReviewsLoading(true);
+      const data = await apiRequest(`/reviews/${alarmId}`);
+      setReviews(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        // If reviewService is wired to the backend, prefer that.
-        const fromApi = await getAlarms().catch(() => null);
-        if (fromApi && Array.isArray(fromApi) && fromApi.length > 0) {
-          setAlarms(fromApi);
-        } else {
-          setAlarms(seedAlarms);
-        }
-      } catch (e) {
-        setAlarms(seedAlarms);
-      }
-    };
-    load();
+    loadAlarms();
   }, []);
 
-  const selectedAlarm = alarms.find((a) => a.id === selectedAlarmId) || alarms[0];
+  useEffect(() => {
+    if (selectedAlarmId) {
+      loadReviews(selectedAlarmId);
+    }
+  }, [selectedAlarmId]);
 
-  const deleteReview = (alarmId, reviewId) => {
-    if (!window.confirm('Delete this review? This action cannot be undone.')) return;
-    setAlarms((prev) =>
-      prev.map((alarm) =>
-        alarm.id === alarmId
-          ? { ...alarm, reviews: alarm.reviews.filter((r) => r.id !== reviewId) }
-          : alarm,
-      ),
-    );
-    // TODO: call backend endpoint DELETE /api/admin/alarms/{alarmId}/reviews/{reviewId}.
+  const selectedAlarm = alarms.find((a) => a.id === selectedAlarmId) || null;
+
+  const handleAlarmChange = (e) => {
+    const { name, value } = e.target;
+    setAlarmForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const startEditAlarm = (alarm) => {
+    setEditingAlarmId(alarm.id);
+    setAlarmForm({
+      id: alarm.id ?? '',
+      name: alarm.name ?? '',
+      description: alarm.description ?? '',
+    });
+  };
+
+  const resetAlarmForm = () => {
+    setEditingAlarmId(null);
+    setAlarmForm(emptyAlarmForm);
+  };
+
+  const handleAlarmSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      if (editingAlarmId !== null) {
+        await apiRequest('/alarms', {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: Number(alarmForm.id),
+            name: alarmForm.name,
+            description: alarmForm.description,
+          }),
+        });
+      } else {
+        await apiRequest(`/alarm/${Number(alarmForm.id)}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            name: alarmForm.name,
+            description: alarmForm.description,
+          }),
+        });
+      }
+
+      resetAlarmForm();
+      await loadAlarms();
+    } catch (err) {
+      setError(err.message || 'Failed to save alarm.');
+    }
+  };
+
+  const handleDeleteAlarm = async (id) => {
+    if (!window.confirm('Delete this alarm?')) return;
+
+    try {
+      await apiRequest('/alarms', {
+        method: 'DELETE',
+        body: JSON.stringify({ id }),
+      });
+
+      if (selectedAlarmId === id) {
+        setSelectedAlarmId(null);
+        setReviews([]);
+      }
+
+      await loadAlarms();
+      if (editingAlarmId === id) resetAlarmForm();
+    } catch (err) {
+      setError(err.message || 'Failed to delete alarm.');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Delete this review?')) return;
+
+    try {
+      await apiRequest('/reviews', {
+        method: 'DELETE',
+        body: JSON.stringify({ id: reviewId }),
+      });
+
+      if (selectedAlarmId) {
+        await loadReviews(selectedAlarmId);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete review.');
+    }
   };
 
   return (
-    <AdminLayout title="Manage alarms & reviews">
-      <h2 className="section-heading">Manage alarms &amp; reviews</h2>
-      <p className="action-text" style={{ marginBottom: '1.5rem' }}>
-        Use this screen to browse alarms and remove reviews that break the
-        code of conduct. The left-hand list shows the available alarms; the
-        reviews for the selected alarm appear on the right.
+    <AdminLayout title="Manage Alarms & Reviews">
+      <h2 className="section-heading">Manage Alarms & Reviews</h2>
+      <p className="action-text" style={{ marginBottom: '1rem' }}>
+        Create, edit, and delete alarms, then review the database-backed comments for each alarm.
       </p>
+
+      {error && (
+        <p style={{ color: 'crimson', marginBottom: '1rem' }}>
+          {error}
+        </p>
+      )}
+
+      <section className="dashboard-card" style={{ marginBottom: '1.5rem' }}>
+        <h3 className="section-heading">
+          {editingAlarmId !== null ? 'Edit Alarm' : 'Create Alarm'}
+        </h3>
+
+        <form
+          onSubmit={handleAlarmSubmit}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '0.75rem',
+          }}
+        >
+          <input
+            name="id"
+            type="number"
+            placeholder="Alarm ID"
+            value={alarmForm.id}
+            onChange={handleAlarmChange}
+            required
+          />
+          <input
+            name="name"
+            type="text"
+            placeholder="Alarm name"
+            value={alarmForm.name}
+            onChange={handleAlarmChange}
+            required
+          />
+          <input
+            name="description"
+            type="text"
+            placeholder="Description"
+            value={alarmForm.description}
+            onChange={handleAlarmChange}
+            required
+          />
+
+          <div style={{ display: 'flex', gap: '0.5rem', gridColumn: '1 / -1' }}>
+            <button type="submit" className="btn btn-sm btn-outline-secondary">
+              {editingAlarmId !== null ? 'Save Changes' : 'Create Alarm'}
+            </button>
+            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={resetAlarmForm}>
+              Clear
+            </button>
+          </div>
+        </form>
+      </section>
 
       <div className="bottom-card-row">
         <section className="dashboard-card" style={{ minHeight: '260px' }}>
           <h3 className="section-heading">Alarms</h3>
-          <ul className="alarm-list" style={{ listStyle: 'none', padding: 0 }}>
-            {alarms.map((alarm) => (
-              <li key={alarm.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedAlarmId(alarm.id)}
-                  className="alarm-button"
-                  style={{ width: '100%', justifyContent: 'space-between' }}
-                >
-                  <span className="alarm-button-name">{alarm.name}</span>
-                  <span className="alarm-button-rating">
-                    {alarm.averageRating.toFixed(1)} / 5
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+
+          {loading ? (
+            <p className="action-text">Loading alarms...</p>
+          ) : alarms.length === 0 ? (
+            <p className="action-text">No alarms found.</p>
+          ) : (
+            <ul className="alarm-list" style={{ listStyle: 'none', padding: 0 }}>
+              {alarms.map((alarm) => (
+                <li key={alarm.id} style={{ marginBottom: '0.75rem' }}>
+                  <div
+                    style={{
+                      border: '1px solid #e3eaf2',
+                      borderRadius: '12px',
+                      padding: '0.8rem',
+                      backgroundColor: selectedAlarmId === alarm.id ? '#f4f8ff' : '#fff',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAlarmId(alarm.id)}
+                      className="alarm-button"
+                      style={{ width: '100%', justifyContent: 'space-between', marginBottom: '0.5rem' }}
+                    >
+                      <span className="alarm-button-name">
+                        {alarm.id} - {alarm.name}
+                      </span>
+                    </button>
+
+                    <p className="alarm-description" style={{ marginBottom: '0.75rem' }}>
+                      {alarm.description}
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => startEditAlarm(alarm)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDeleteAlarm(alarm.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="dashboard-card" style={{ minHeight: '260px' }}>
           <h3 className="section-heading">Reviews for selected alarm</h3>
-          {selectedAlarm ? (
+
+          {!selectedAlarm ? (
+            <p className="action-text">Select an alarm to view its reviews.</p>
+          ) : (
             <>
               <p className="alarm-description" style={{ marginBottom: '1rem' }}>
                 Showing reviews for <strong>{selectedAlarm.name}</strong>.
               </p>
-              {selectedAlarm.reviews.length === 0 ? (
-                <p className="action-text">No reviews yet for this alarm.</p>
+
+              {reviewsLoading ? (
+                <p className="action-text">Loading reviews...</p>
+              ) : reviews.length === 0 ? (
+                <p className="action-text">No reviews found for this alarm.</p>
               ) : (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {selectedAlarm.reviews.map((review) => (
+                  {reviews.map((review) => (
                     <li
                       key={review.id}
                       style={{
@@ -114,7 +311,10 @@ const ManageAlarmsPage = () => {
                       }}
                     >
                       <p style={{ margin: 0, fontSize: '0.9rem', color: '#555' }}>
-                        <strong>{review.author}</strong>
+                        <strong>Review #{review.id}</strong> by user {review.userId}
+                      </p>
+                      <p style={{ margin: '0.25rem 0', fontSize: '0.95rem' }}>
+                        Rating: {review.rating} / 5
                       </p>
                       <p style={{ margin: '0.25rem 0 0.5rem 0', fontSize: '0.95rem' }}>
                         {review.text}
@@ -122,7 +322,7 @@ const ManageAlarmsPage = () => {
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-danger"
-                        onClick={() => deleteReview(selectedAlarm.id, review.id)}
+                        onClick={() => handleDeleteReview(review.id)}
                       >
                         Delete review
                       </button>
@@ -131,8 +331,6 @@ const ManageAlarmsPage = () => {
                 </ul>
               )}
             </>
-          ) : (
-            <p className="action-text">Select an alarm on the left to view reviews.</p>
           )}
         </section>
       </div>

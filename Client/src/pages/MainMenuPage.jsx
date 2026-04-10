@@ -1,18 +1,24 @@
-/* allows users to view their current alarm, browse other alarms, and access settings */
 import { Link, useNavigate } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import { useAuth } from '../auth/AuthContext';
+import { useEffect, useState } from 'react';
+import { getAlarmById } from '../services/alarmService';
+import { getAlarmRating } from '../services/reviewService';
 import '../styles/main-menu.css';
 import logo from '../assets/logo.png';
 
 function MainMenuPage() {
-  // Gets logout function from AuthContext
   const { logout } = useAuth();
-
-  // Used to redirect user after logout
   const navigate = useNavigate();
 
-  // Handles logout
+  const [currentAlarmName, setCurrentAlarmName] = useState(
+    localStorage.getItem('currentAlarmName') || 'Not set yet'
+  );
+  const [currentAlarmDescription, setCurrentAlarmDescription] = useState(
+    'You have not chosen an alarm yet.'
+  );
+  const [currentAlarmRating, setCurrentAlarmRating] = useState('N/A');
+
   const handleLogout = () => {
     logout();
     localStorage.removeItem('currentAlarmName');
@@ -20,26 +26,38 @@ function MainMenuPage() {
     navigate('/');
   };
 
-  // Gets the current selected alarm from local storage
-  const currentAlarmName =
-    localStorage.getItem('currentAlarmName') || 'Not set yet';
+  useEffect(() => {
+    const currentAlarmId = localStorage.getItem('currentAlarmId');
 
-  // Temporary placeholder text until backend rating and description
-  // are connected properly for the chosen alarm
-  const currentAlarmRating =
-    currentAlarmName === 'Not set yet' ? 'N/A' : 'N/A';
+    const fetchCurrentAlarmData = async () => {
+      if (!currentAlarmId) {
+        setCurrentAlarmName('Not set yet');
+        setCurrentAlarmDescription('You have not chosen an alarm yet.');
+        setCurrentAlarmRating('N/A');
+        return;
+      }
 
-  const currentAlarmDescription =
-    currentAlarmName === 'Not set yet'
-      ? 'You have not chosen an alarm yet.'
-      : 'This is your currently selected alarm.';
+      try {
+        const alarmData = await getAlarmById(currentAlarmId);
+        const ratingData = await getAlarmRating(currentAlarmId);
+
+        setCurrentAlarmName(alarmData.name);
+        setCurrentAlarmDescription(alarmData.description);
+        setCurrentAlarmRating(ratingData.Score ?? 'N/A');
+      } catch (err) {
+        console.error('Failed to load current alarm info:', err);
+        setCurrentAlarmRating('N/A');
+      }
+    };
+
+    fetchCurrentAlarmData();
+  }, []);
 
   return (
     <div className="container py-5">
-      {/* Top navigation bar */}
       <div className="main-menu-navbar">
         <div className="navbar-left">
-          <img src={logo} alt="Logo" className="navbar-logo" />
+          <img src={logo} alt="Excitare logo" className="navbar-logo" />
         </div>
 
         <div className="navbar-center">
@@ -53,48 +71,39 @@ function MainMenuPage() {
           </button>
         </div>
       </div>
+      
 
-      {/* Main content area */}
-      <div className="main-menu-layout">
-        {/* Top section: current alarm info */}
-        <div className="dashboard-card current-alarm-card">
-          <h2 className="section-heading">Current Alarm</h2>
+     
+     
+     <div className="main-menu-layout">
 
-          <h2 className="alarm-name">
-            {currentAlarmName === 'Not set yet'
-              ? 'No alarm selected'
-              : currentAlarmName}
-          </h2>
+  {/* Current alarm */}
+  <div className="dashboard-card current-alarm-card">
+    <h3 className="section-heading">Current Alarm</h3>
+    <h4 className="alarm-name">{currentAlarmName}</h4>
+    <p className="alarm-rating">⭐ {currentAlarmRating}</p>
+    <p className="alarm-description">{currentAlarmDescription}</p>
+  </div>
 
-          <p className="alarm-rating">
-            Average Rating: {currentAlarmRating} / 5
-          </p>
+  {/* Bottom row */}
+  <div className="bottom-card-row">
 
-          <p className="alarm-description">{currentAlarmDescription}</p>
-        </div>
-
-        {/* Bottom section - View alarms and settings */}
-        <div className="bottom-card-row">
-          <Link to="/alarms" className="dashboard-card action-card action-link">
-            <h2 className="section-heading">View Alarms</h2>
-            <p className="action-text">
-              Browse all available alarms, compare ratings, and view alarm
-              details.
-            </p>
-          </Link>
-
-          <Link
-            to="/settings"
-            className="dashboard-card action-card action-link"
-          >
-            <h2 className="section-heading">Settings</h2>
-            <p className="action-text">
-              Manage alarm preferences, accessibility options, and calendar
-              connection.
-            </p>
-          </Link>
-        </div>
+    <Link to="/alarms" className="action-link">
+      <div className="dashboard-card action-card">
+        <h3 className="section-heading">View Alarms</h3>
+        <p className="action-text">Browse and select alarms</p>
       </div>
+    </Link>
+
+    <Link to="/settings" className="action-link">
+      <div className="dashboard-card action-card">
+        <h3 className="section-heading">Settings</h3>
+        <p className="action-text">Manage your preferences</p>
+      </div>
+    </Link>
+
+  </div>
+</div>
     </div>
   );
 }

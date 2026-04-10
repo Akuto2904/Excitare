@@ -1,3 +1,13 @@
 backend/.env
 **/__pycache__/
 *.pyc
+exec details.txt
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc

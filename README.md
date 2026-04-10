@@ -7,6 +7,7 @@ The database stores, alarm info, review info and user info.
 # How to run: 
 
 Inside directory /Backend/ run command: python app.py
+Inside directory / Client/ run command: npm run dev
 
 # How to unit test:
 
@@ -99,6 +100,132 @@ With the flask app running go to route:
 
            **GET** Endpoint - Retrieves the name and the time of the first event scheduled the next day for the user in url
 
+## Frontend setup
+1. Navigate to the Frontend directory:
+   cd Client
+
+2. Install dependencies
+   npm install
+
+3. Run the development server:
+   npm run dev
+   
+5. Open the app in browser
+
+## Test accounts
+
+Standard User :
+Email: testemail1@gmail.com
+password: 123
+
+Locked User:
+Email: testemail2@gmail.com
+Password: 123
+
+Admin user: 
+Email: testemail3@gmail.com
+Password: 123
+
+## Frontend Features
+-User login and authentication 
+-Browse available alarms
+-View alarm details 
+-Set current alarm 
+-Submit and view reviews 
+-Settings page : Google calendar integration 
+-Accessibility features 
+-logout function
+
+##Frontend Usability testing 
+Test tasks included
+-Logging in as a standard user
+-Browsing alarms 
+-Viewing alarm details 
+-selecting an alarm 
+-submitting a review 
+-accessing setting 
+-connecting google calendar
+-using accessibility features
+-logging out 
+
+Results: 
+-All core features worked as expected 
+-Minor issued where idetified and resolved during development (e.g nav bugs, UI consistency)
 
 
+##Frontend API Usage 
+the frontend communicates with the backend API using the following endpoints:
 
+POST /api/login
+-Used for user authentication 
+
+GET /api/alarms
+- Retrives all alarms
+
+GET /api/alarm/:id
+- Retrieves a specific alarm
+
+Get /api/reviews/:alarmId
+- Retrieves reviews for an alarm
+
+POST /api/reviews/:alarmId
+- Submits a review
+
+GET /api/rating/:alarmID
+- Retrieves average rating
+
+PUT /api/users
+- Updates selected alarm
+
+GET /api/:userId/calendars
+-Retrieves user's google calendars
+
+PUT /setCalendar/:userID
+-Saves selected calendar 
+
+GET /api/:userID/firstClass
+-Retrieves next class information
+
+GET /api/users
+-Retrieves all users
+
+POST /api/users
+-Creates a new user
+
+PUT /api/users
+-Updates an existing user
+
+DELETE /api/users
+-Deletes a user
+
+GET /api/alarms
+-Retrieves all alarms
+
+POST /api/alarm/:id
+-Creates a new alarm
+
+PUT /api/alarms
+-Updates an existing alarm
+
+DELETE /api/alarms
+-Deletes an alarm
+
+DELETE /api/reviews
+-Deletes a review for moderation
+
+##Admin Features
+-Manage users
+-Create new users
+-Edit existing user details
+-Update user roles
+-Lock and unlock user accounts
+-Manage alarms
+-Create new alarms
+-Edit existing alarms
+-Delete alarms
+-Moderate alarm reviews
+
+##Admin Access
+-Admin functionality is intended only for admin's usage, users are prohibited
+-User role is returned during login and forced to normal frontend by control access
+-Any attempt to skip sign in and directly use the web link will just redirect to the admin login page

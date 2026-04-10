@@ -1,26 +1,71 @@
-// Base URL of backend API
-const API_BASE = "http://localhost:5000/api";
+// Client/src/services/api.js
+// Shared API helper for ALL client and admin services.
 
-// API key (Frontend App key)
-const API_KEY = " 960592bc5ec27dd978493406c289a5b251d0da53f09907edb1e577eb9f13c1db";
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api';
 
-// Function to make API requests
-export async function apiRequest(endpoint, options = {}) {
-  // Send request to backend using fetch
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options, // allows extra options (e.g. POST later)
-    headers: {
-      "Content-Type": "application/json", // tells backend we are sending JSON
-      "X-API-KEY": API_KEY, // required for authentication 
-      ...options.headers, // allows overriding/adding headers if needed
-    },
+// IMPORTANT: this must match the key in your APIKey table (Frontend App).
+const API_KEY = import.meta.env.VITE_API_KEY;
+
+/**
+ * Low-level helper using fetch.
+ * All other helpers (including "api.post") delegate to this.
+ */
+export async function apiRequest(path, options = {}) {
+  const headers = {
+    ...(options.headers || {}),
+    'Content-Type': 'application/json',
+    'X-API-KEY': API_KEY, // our key always wins
+  };
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
   });
 
-  // If response is not OK (for exampple 404, 500), throw error
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+    const text = await response.text();
+    throw new Error(`API error ${response.status}: ${text}`);
   }
 
-  // Convert response to JSON and return it
+  // No body (e.g., DELETE 204)
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
 }
+
+/**
+ * Default export that behaves like a very small subset of axios.
+ * This lets existing code in authService.js keep using: api.post('/login', {...})
+ */
+const api = {
+  get: (path, config = {}) =>
+    apiRequest(path, {
+      method: 'GET',
+      ...(config || {}),
+    }),
+
+  post: (path, data, config = {}) =>
+    apiRequest(path, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+      ...(config || {}),
+    }),
+
+  put: (path, data, config = {}) =>
+    apiRequest(path, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+      ...(config || {}),
+    }),
+
+  delete: (path, config = {}) =>
+    apiRequest(path, {
+      method: 'DELETE',
+      ...(config || {}),
+    }),
+};
+
+export default api;
