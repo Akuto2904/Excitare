@@ -177,5 +177,46 @@ PUT /setCalendar/:userID
 GET /api/:userID/firstClass
 -Retrieves next class information
 
+GET /api/users
+-Retrieves all users
 
+POST /api/users
+-Creates a new user
 
+PUT /api/users
+-Updates an existing user
+
+DELETE /api/users
+-Deletes a user
+
+GET /api/alarms
+-Retrieves all alarms
+
+POST /api/alarm/:id
+-Creates a new alarm
+
+PUT /api/alarms
+-Updates an existing alarm
+
+DELETE /api/alarms
+-Deletes an alarm
+
+DELETE /api/reviews
+-Deletes a review for moderation
+
+##Admin Features
+-Manage users
+-Create new users
+-Edit existing user details
+-Update user roles
+-Lock and unlock user accounts
+-Manage alarms
+-Create new alarms
+-Edit existing alarms
+-Delete alarms
+-Moderate alarm reviews
+
+##Admin Access
+-Admin functionality is intended only for admin's usage, users are prohibited
+-User role is returned during login and forced to normal frontend by control access
+-Any attempt to skip sign in and directly use the web link will just redirect to the admin login page
