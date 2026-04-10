@@ -186,7 +186,15 @@ const ManageUsersPage = () => {
             gap: '0.75rem',
           }}
         >
-          <input name="id" type="number" placeholder="ID" value={form.id} onChange={handleChange} required />
+          <input
+            name="id"
+            type="number"
+            placeholder="ID"
+            value={form.id}
+            onChange={handleChange}
+            required
+            readOnly={editingId !== null}
+          />
           <input name="name" type="text" placeholder="Name" value={form.name} onChange={handleChange} required />
           <input name="username" type="text" placeholder="Username" value={form.username} onChange={handleChange} required />
           <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
