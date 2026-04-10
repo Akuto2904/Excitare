@@ -75,7 +75,7 @@ def preloadUsers():
                 encryptedPassword = fernet.encrypt((user["password"]).encode()) # encrypts password
                 newUser = User(                     # Create a new User instance with the provided data
                     id=user["id"],
-                    refreshToken=user["refreshToken"]
+                    refreshToken=user["refreshToken"],
                     name=user["name"],
                     username=user["username"],
                     email=user['email'],
