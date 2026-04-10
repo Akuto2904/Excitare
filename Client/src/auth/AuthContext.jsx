@@ -27,6 +27,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  // Apply saved settings on initial load
+  useEffect(() => {
+  const savedBigText = localStorage.getItem('bigTextMode') === 'true';
+  const savedColourblind = localStorage.getItem('colourblindMode') === 'on';
+
+  document.body.classList.toggle('big-text', savedBigText);
+  document.body.classList.toggle('colourblind-mode', savedColourblind);
+}, []);
+
   const login = async ({ email, password }) => {
     setLoading(true);
     setError('');

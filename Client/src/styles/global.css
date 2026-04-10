@@ -21,3 +21,38 @@ h1, h2, h3, h4 {
   display: flex;
   align-items: center;
 }
+
+
+body.big-text {
+  font-size: 1.12rem;
+}
+
+body.big-text h1 {
+  font-size: 2.2rem;
+}
+
+body.big-text h2 {
+  font-size: 1.85rem;
+}
+
+body.big-text h3 {
+  font-size: 1.5rem;
+}
+
+body.big-text p,
+body.big-text label,
+body.big-text a,
+body.big-text button,
+body.big-text input,
+body.big-text select,
+body.big-text textarea {
+  font-size: 1.08rem;
+}
+
+body.colourblind-mode {
+  --primary: #005fcc;
+  --secondary: #16325c;
+  --background: #f5f7fb;
+  --surface: #ffffff;
+  --text: #111827;
+}
