@@ -378,8 +378,8 @@ class usersAPI(Resource):
             matchingUser.status = user["status"]
         if user.get("role") is not None:
             matchingUser.role = user["role"]
-        if user.get("password") is not None:
-            matchingUser.password = user["password"]
+        if user.get("password") is not None and user["password"] != "":
+            matchingUser.password = fernet.encrypt(user["password"].encode()).hex()
         if user.get("chosenAlarmId") is not None:
             matchingUser.chosenAlarmId = user["chosenAlarmId"]
 
@@ -408,6 +408,8 @@ class usersAPI(Resource):
         if existingUser:
             return jsonify({"error": "User with id already exists"}), 400
 
+        encryptedPassword = fernet.encrypt(user["password"].encode()).hex()
+
         newUser = User(
             id=user["id"],
             name=user["name"],
@@ -415,7 +417,7 @@ class usersAPI(Resource):
             email=user["email"],
             role=user.get("role", "user"),
             status=user.get("status", "free"),
-            password=user["password"],
+            password=encryptedPassword,
             chosenAlarmId=user["chosenAlarmId"],
         )
 
