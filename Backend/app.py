@@ -1,10 +1,14 @@
 import os
-from flask import Flask, jsonify, render_template, request, url_for, session, redirect
+from flask import Flask, jsonify, request, url_for, session, redirect
 from sqlalchemy import select
 from flask_restful import Api, Resource
 from models import db, Alarm, User, Review
 from auth import require_api_key
 from flask_cors import CORS
+from flask_swagger import swagger
+from flask_swagger_ui import get_swaggerui_blueprint
+
+
 
 # Google Calendar Implementation
 from datetime import datetime, timedelta
@@ -71,11 +75,42 @@ db.init_app(app)
 # Set up RESTful API
 api = Api(app)
 
+# Swagger documentation route
+@app.route('/swagger')
+def get_swagger():
+    swag = swagger(app)
+    swag['info']['version'] = "1.0"
+    swag['info']['title'] = "Excitare"
+    return jsonify(swag)
+
+# Swagger UI route
+SWAGGER_URL = '/swagger-ui'
+API_URL = '/swagger'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "Excitare"
+    }
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
 
 # API Resource for Alarms
 class alarmsAPI(Resource):
     @require_api_key
     def get(self):
+        """
+        Alarms GET Endpoint
+        ---
+        tags:
+          - Alarm
+        responses:
+          200:
+            description: Lists Alarms
+          404:
+            description: Alarms not found
+        """
         alarms = Alarm.query.all()
         if not alarms:
             return jsonify({"error": "not found"}), 404
@@ -130,6 +165,27 @@ class alarmsAPI(Resource):
 
     @require_api_key
     def put(self):
+        """
+        Alarm PUT Endpoint
+        ---
+        tags:
+          - Alarm
+        parameters:
+          - name: body
+            in: body
+            required: true
+            schema:
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+        responses:
+          200:
+            description: Alarm updated successfully!
+          404:
+            description: Alarm not found
+        """
         alarm = request.get_json()
         if not alarm:
             return jsonify({"error": "not found"}), 404
@@ -161,6 +217,27 @@ class alarmsAPI(Resource):
 
     @require_api_key
     def delete(self):
+        """
+        Alarm DELETE Endpoint
+        ---
+        tags:
+          - Alarm
+        parameters:
+          - name: body
+            in: body
+            required: true
+            schema:
+              id: alarmID
+              type: object
+              properties:
+                id:
+                  type: integer
+        responses:
+          200:
+            description: Alarm deleted successfully!
+          404:
+            description: Alarm not found
+        """
         alarm = request.get_json()
         if not alarm:
             return jsonify({"error": "not found"}), 404
@@ -181,6 +258,17 @@ class alarmsAPI(Resource):
 @app.route("/api/alarm/<int:id>", methods=["GET"])
 @require_api_key
 def getAlarm(id):
+    """
+    Alarm GET Endpoint given ID in URL
+    ---
+    tags:
+      - Alarm
+    responses:
+      200:
+        description: Lists Alarm's Details
+      404:
+        description: Alarm not found
+    """
     row = db.session.execute(select(Alarm).where(Alarm.id == id)).first()
     if not row:
         return jsonify({"error": "not found"}), 404
@@ -235,6 +323,29 @@ def getAlarm(id):
 @app.route("/api/alarm/<int:id>", methods=["POST"])
 @require_api_key
 def postAlarm(id):
+    """
+    Alarm POST Endpoint
+    ---
+    tags:
+      - Alarm
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+    responses:
+      200:
+        description: New alarm added successfully!
+      404:
+        description: Not found
+      400:
+        description: Alarm with id already exists
+    """
     alarm = request.get_json()
     if not alarm:
         return jsonify({"error": "not found"}), 404
@@ -244,7 +355,7 @@ def postAlarm(id):
         return jsonify({"error": "Alarm with id already exists"}), 400
 
     newAlarm = Alarm(
-        id=alarm["id"],
+        id=id,
         name=alarm["name"],
         description=alarm["description"],
     )
@@ -268,6 +379,15 @@ def postAlarm(id):
 @app.route("/api/rating/<int:alarmIdGiven>", methods=["GET"])
 @require_api_key
 def getAlarmRating(alarmIdGiven):
+    """
+    GET Alarm Rating Endpoint
+    ---
+    tags:
+      - Alarm
+    responses:
+      200:
+        description: Gives Alarms Rating
+    """
     rows = db.session.execute(
         select(Review.reviewRating).where(Review.alarmId == alarmIdGiven)
     ).scalars().all()
@@ -306,6 +426,18 @@ def getAlarmRating(alarmIdGiven):
 class usersAPI(Resource):
     @require_api_key
     def get(self):
+        """
+        GET Users Endpoint
+        ---
+        tags:
+          - User
+        responses:
+          200:
+            description: List Of Users!
+          404:
+            description: User not found
+        """
+        
         users = User.query.all()
         if not users:
             return jsonify({"error": "not found"}), 404
@@ -359,6 +491,41 @@ class usersAPI(Resource):
 
     @require_api_key
     def put(self):
+        """
+        PUT User Endpoint
+        ---
+        tags:
+          - User
+        parameters:
+          - name: body
+            in: body
+            required: false
+            schema:
+              id: userObject
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                username:
+                  type: string
+                email:
+                  type: string
+                status:
+                  type: string
+                role:
+                  type: string
+                password:
+                  type: string
+                chosenAlarmID:
+                  type: string
+        responses:
+          200:
+            description: User updated successfully!
+          404:
+            description: User not found
+        """
         user = request.get_json()
         if not user:
             return jsonify({"error": "not found"}), 404
@@ -400,6 +567,43 @@ class usersAPI(Resource):
 
     @require_api_key
     def post(self):
+        """
+        POST Users Endpoint
+        ---
+        tags:
+          - User
+        parameters:
+          - name: body
+            in: body
+            required: true
+            schema:
+              id: PostUserObject
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                username:
+                  type: string
+                email:
+                  type: string
+                status:
+                  type: string
+                role:
+                  type: string
+                password:
+                  type: string
+                chosenAlarmID:
+                  type: string
+        responses:
+          200:
+            description: User updated successfully!
+          404:
+            description: User not found
+          400:
+            description: User with id already exists
+        """
         user = request.get_json()
         if not user:
             return jsonify({"error": "not found"}), 404
@@ -408,8 +612,6 @@ class usersAPI(Resource):
         if existingUser:
             return jsonify({"error": "User with id already exists"}), 400
 
-        encryptedPassword = fernet.encrypt(user["password"].encode()).hex()
-
         newUser = User(
             id=user["id"],
             name=user["name"],
@@ -417,7 +619,7 @@ class usersAPI(Resource):
             email=user["email"],
             role=user.get("role", "user"),
             status=user.get("status", "free"),
-            password=encryptedPassword,
+            password=fernet.encrypt((user["password"]).encode()).hex(),
             chosenAlarmId=user["chosenAlarmId"],
         )
 
@@ -439,6 +641,27 @@ class usersAPI(Resource):
 
     @require_api_key
     def delete(self):
+        """
+        DELETE User Endpoint
+        ---
+        tags:
+          - User
+        parameters:
+          - name: body
+            in: body
+            required: true
+            schema:
+              id: userID
+              type: object
+              properties:
+                id:
+                  type: integer
+        responses:
+          200:
+            description: User deleted successfully!
+          404:
+            description: User not found
+        """
         user = request.get_json()
         if not user:
             return jsonify({"error": "not found"}), 404
@@ -459,6 +682,17 @@ class usersAPI(Resource):
 @app.route("/api/user/<int:id>", methods=["GET"])
 @require_api_key
 def getUser(id):
+    """
+    GET User Endpoint
+    ---
+    tags:
+      - User
+    responses:
+      200:
+        description: User Information
+      404:
+        description: User not found
+    """
     row = db.session.execute(select(User).where(User.id == id)).first()
     if not row:
         return jsonify({"error": "not found"}), 404
@@ -508,6 +742,17 @@ def getUser(id):
 @app.route("/api/user/<int:id>/status", methods=["GET"])
 @require_api_key
 def getUserStatus(id):
+    """
+    GET User Status Endpoint
+    ---
+    tags:
+      - User
+    responses:
+      200:
+        description: User deleted successfully!
+      404:
+        description: User not found
+    """
     row = db.session.execute(select(User).where(User.id == id)).first()
     if not row:
         return jsonify({"error": "not found"}), 404
@@ -555,6 +800,17 @@ def getUserStatus(id):
 @app.route("/api/user/<string:username>", methods=["GET"])
 @require_api_key
 def getUserViaUsername(username):
+    """
+    GET User by Username Endpoint
+    ---
+    tags:
+      - User
+    responses:
+      200:
+        description: User Information
+      404:
+        description: User not found
+    """
     row = db.session.execute(select(User).where(User.username == username)).first()
     if not row:
         return jsonify({"error": "not found"}), 404
@@ -612,6 +868,15 @@ api.add_resource(usersAPI, "/api/users")
 @app.route("/api/reviews/<int:alarmIdGiven>", methods=["GET"])
 @require_api_key
 def getAlarmReviews(alarmIdGiven):
+    """
+    GET Alarm Reviews Endpoint
+    ---
+    tags:
+      - Review
+    responses:
+      200:
+        description: Reviews
+    """
     rows = db.session.execute(select(Review).where(Review.alarmId == alarmIdGiven)).scalars().all()
 
     reviews = [review.asdict() for review in rows]
@@ -638,6 +903,35 @@ def getAlarmReviews(alarmIdGiven):
 @app.route("/api/reviews/<int:alarmIdGiven>", methods=["POST"])
 @require_api_key
 def postAlarmReview(alarmIdGiven):
+    """
+    POST Alarm Review Endpoint
+    ---
+    tags:
+      - Review
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          id: reviewPostObject
+          type: object
+          properties:
+            id:
+              type: integer
+            userId:
+              type: string
+            reviewText:
+              type: string
+            reviewRating:
+              type: integer
+    responses:
+      200:
+        description: New review added successfully!
+      404:
+        description: Review Not Found
+      400:
+        description: Missing review fields / Review with id already exists
+    """
     review = request.get_json()
     if not review:
         return jsonify({"error": "not found"}), 404
@@ -694,6 +988,27 @@ def postAlarmReview(alarmIdGiven):
 @app.route("/api/reviews", methods=["DELETE"])
 @require_api_key
 def deleteAlarmReview():
+    """
+    DELETE Alarm Review Endpoint
+    ---
+    tags:
+      - Review
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          id: reviewID
+          type: object
+          properties:
+            id:
+              type: integer
+    responses:
+      200:
+        description: New review added successfully!
+      404:
+        description: Review Not Found
+    """
     review = request.get_json()
     if not review:
         return jsonify({"error": "not found"}), 404
@@ -726,6 +1041,29 @@ def deleteAlarmReview():
 @app.route("/api/login", methods=["POST"])
 @require_api_key
 def loginUser():
+    """
+    POST Login Endpoint
+    ---
+    tags:
+      - Login
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+    responses:
+      200:
+        description: Details Accepted, User Details
+      404:
+        description: Missing email or password
+      401:
+        description: Details Rejected
+    """
     loginDetails = request.get_json()
     if not loginDetails:
         return jsonify({"error": "not found"}), 404
@@ -815,10 +1153,23 @@ def calendarLoginRedirect():
 @app.route("/api/<string:userID>/calendars", methods=["GET"])
 @require_api_key
 def calendars(userID):
+    """
+    GET user calendars
+    ---
+    tags:
+      - Calendar
+    responses:
+      200:
+        description: JSON of calendars
+      404:
+        description: User Not Found
+      500:
+        description: An error occurred
+    """
     user = User.query.filter_by(id=userID).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
-
+    
     sessionCredentials = Credentials(
         token=None,
         refresh_token=user.refreshToken,
@@ -849,6 +1200,27 @@ def calendars(userID):
 @app.route("/api/setCalendar/<string:userID>", methods=["PUT"])
 @require_api_key
 def setCalendar(userID):
+    """
+    PUT user chosen calendar
+    ---
+    tags:
+      - Calendar
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          id: calendarID
+          type: object
+          properties:
+            id:
+              type: string
+    responses:
+      200:
+        description: User Updated Successfully
+      404:
+        description: User Not Found
+    """
     requestMade = request.get_json()
     if not requestMade:
         return jsonify({"error": "not found"}), 404
@@ -883,6 +1255,19 @@ def setCalendar(userID):
 @app.route("/api/<string:userID>/firstClass", methods=["GET"])
 @require_api_key
 def classTime(userID):
+    """
+    GET user first class tomorrow
+    ---
+    tags:
+      - Calendar
+    responses:
+      200:
+        description: JSON of class info
+      404:
+        description: User Not Found
+      500:
+        description: An error occurred
+    """
     user = User.query.filter_by(id=userID).first()
     if not user:
         return jsonify({"error": "User not found"}), 404

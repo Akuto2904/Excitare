@@ -19,15 +19,16 @@ alarms = [
 ]
 # List of reviews used to populate the database
 reviews = [
-    {"id": 1, "userId": 1, "alarmId": 1, "reviewText": "Wakes me up", "reviewRating": 2},
-    {"id": 2, "userId": 2, "alarmId": 1, "reviewText": "Loud", "reviewRating": 8},
-    {"id": 3, "userId": 3, "alarmId": 1, "reviewText": "Simple", "reviewRating": 7}
+    {"id": 1, "userId": 1, "alarmId": 1, "reviewText": "Wakes me up", "reviewRating": 3},
+    {"id": 2, "userId": 2, "alarmId": 1, "reviewText": "Loud", "reviewRating": 4},
+    {"id": 3, "userId": 3, "alarmId": 1, "reviewText": "Simple", "reviewRating": 2}
 ]
 # List of users used to populate the database
+# Links user 1 to test google account eexcitare@gmail.com for google calendar integration
 users = [
-    {"id": 1, "name": "John", "username": "J", "email" : "testemail1@gmail.com", "role" : "user", "status" : "free", "password": "123", "chosenAlarmId": 1},
-    {"id": 2, "name": "Adam", "username": "A", "email" : "testemail2@gmail.com", "role" : "user", "status" : "locked", "password": "123", "chosenAlarmId": 2},
-    {"id": 3, "name": "Lorimer", "username": "L", "email" : "testemail3@gmail.com", "role" : "admin", "status" : "free", "password": "123", "chosenAlarmId": 3}
+    {"id": 1, "name": "John", "username": "J", "email" : "testemail1@gmail.com", "role" : "user", "status" : "free", "password": "123", "refreshToken" : "1//03z4OPDLmZgVFCgYIARAAGAMSNwF-L9IrDpb81SKbviHZzal2keyiKWf7C19FqPF2U4qz0mAwKNQ4LUTv2N7clV1tPofIBGE9xK4", "chosenAlarmId": 1},
+    {"id": 2, "name": "Adam", "username": "A", "email" : "testemail2@gmail.com", "role" : "user", "status" : "locked", "password": "123", "refreshToken" : "none", "chosenAlarmId": 2},
+    {"id": 3, "name": "Lorimer", "username": "L", "email" : "testemail3@gmail.com", "role" : "admin", "status" : "free", "password": "123", "refreshToken" : "none", "chosenAlarmId": 3}
 ]
 
 # Function to preload the database with alarm data
@@ -74,6 +75,7 @@ def preloadUsers():
                 encryptedPassword = fernet.encrypt((user["password"]).encode()) # encrypts password
                 newUser = User(                     # Create a new User instance with the provided data
                     id=user["id"],
+                    refreshToken=user["refreshToken"],
                     name=user["name"],
                     username=user["username"],
                     email=user['email'],
