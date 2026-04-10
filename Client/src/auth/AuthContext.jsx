@@ -12,7 +12,7 @@ const readInitialUser = () => {
 };
 
 const API_BASE = 'http://localhost:5000/api';
-const API_KEY = ' 960592bc5ec27dd978493406c289a5b251d0da53f09907edb1e577eb9f13c1db';
+const API_KEY = '960592bc5ec27dd978493406c289a5b251d0da53f09907edb1e577eb9f13c1db';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(readInitialUser);
