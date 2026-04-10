@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import '../styles/variables.css';
 import '../styles/global.css';
 import '../styles/login.css';
+import logo from '../assets/logo.png';
 
 const AdminLoginPage = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const AdminLoginPage = () => {
       <div className="page-card login-card">
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <img
-            src="../assets/logo.png"
+            src={logo}
             alt="Alarm admin logo"
             className="login-logo"
           />

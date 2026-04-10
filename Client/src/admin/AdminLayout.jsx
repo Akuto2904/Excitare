@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import '../styles/variables.css';
 import '../styles/global.css';
 import '../styles/main-menu.css';
+import logo from '../assets/logo.png';
 
 const AdminLayout = ({ title, children }) => {
   const { user, logout } = useAuth();
@@ -14,7 +15,7 @@ const AdminLayout = ({ title, children }) => {
         <header className="main-menu-navbar">
           <div>
             <img
-              src="../assets/logo.png"
+              src={logo}
               alt="Alarm admin logo"
               className="navbar-logo"
             />
