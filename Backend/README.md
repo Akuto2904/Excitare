@@ -8,6 +8,15 @@ The database stores, alarm info, review info and user info.
 
 Inside directory /Backend/ run command: python app.py
 
+# How to unit test:
+
+In /Backend/ run command: python -m pytest -v 
+
+# How to see swagger API documentation:
+
+With the flask app running go to route:
+**http://127.0.0.1:5000/swagger-ui/**
+
 # Endpoints implemented:
 ##      Alarms: 
         @ Route: /api/alarms
