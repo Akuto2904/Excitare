@@ -24,9 +24,8 @@ reviews = [
     {"id": 3, "userId": 3, "alarmId": 1, "reviewText": "Simple", "reviewRating": 2}
 ]
 # List of users used to populate the database
-# Links user 1 to test google account eexcitare@gmail.com for google calendar integration
 users = [
-    {"id": 1, "name": "John", "username": "J", "email" : "testemail1@gmail.com", "role" : "user", "status" : "free", "password": "123", "refreshToken" : "1//03z4OPDLmZgVFCgYIARAAGAMSNwF-L9IrDpb81SKbviHZzal2keyiKWf7C19FqPF2U4qz0mAwKNQ4LUTv2N7clV1tPofIBGE9xK4", "chosenAlarmId": 1},
+    {"id": 1, "name": "John", "username": "J", "email" : "testemail1@gmail.com", "role" : "user", "status" : "free", "password": "123", "refreshToken" : "none", "chosenAlarmId": 1},
     {"id": 2, "name": "Adam", "username": "A", "email" : "testemail2@gmail.com", "role" : "user", "status" : "locked", "password": "123", "refreshToken" : "none", "chosenAlarmId": 2},
     {"id": 3, "name": "Lorimer", "username": "L", "email" : "testemail3@gmail.com", "role" : "admin", "status" : "free", "password": "123", "refreshToken" : "none", "chosenAlarmId": 3}
 ]
