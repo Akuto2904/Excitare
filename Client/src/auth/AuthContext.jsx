@@ -1,36 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-/**
- * Simple auth context used on the front-end.
- *
- * The real project should back this with the Flask API
- * (login endpoint that returns a JWT / session cookie and role).
- * For now, this keeps the admin/non-admin split and route protection
- * so that other team members can plug in the actual backend.
- */
-
 const AuthContext = createContext(null);
 
-//Read saved user from sessionStorage on first load
 const readInitialUser = () => {
   try {
     const raw = window.sessionStorage.getItem('authUser');
     return raw ? JSON.parse(raw) : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 };
 
-//API keys
 const API_BASE = 'http://localhost:5000/api';
-const API_KEY = '06abce352a6e9aab3e6c59d8a6e6619535e36385b92d094cb4640dece149a1f6';
-
-
+const API_KEY = ' 960592bc5ec27dd978493406c289a5b251d0da53f09907edb1e577eb9f13c1db';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(readInitialUser);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -42,12 +29,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async ({ email, password }) => {
     setLoading(true);
-    setError(null);
+    setError('');
 
     try {
-      // Backend currently expects GET /api/login with a JSON body
       const response = await fetch(`${API_BASE}/login`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-API-KEY': API_KEY,
@@ -57,35 +43,31 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data?.error || 'Login request failed.');
-      }
-      
-if (data.Details !== 'Accepted') {
-        setError('Incorrect email or password.');
-        throw new Error('Incorrect email or password.');
+      if (!response.ok || data.Details !== 'Accepted') {
+        throw new Error('Invalid email or password.');
       }
 
-      if (data.userStatus === 'locked') {
-        setError('Your account is locked. Please contact an admin.');
-        throw new Error('Account is locked.');
-      }
-
-      // Backend does not return userId yet, so a temporary id bridge for now
-      const loggedInUser = {
-        id: 1,
-        email,
-        role: data.userRole || 'user',
-        status: data.userStatus || 'free',
+      const backendUser = data.user ?? {};
+      const authUser = {
+        id: data.userId ?? backendUser.id,
+        name: backendUser.name ?? '',
+        username: backendUser.username ?? '',
+        email: backendUser.email ?? email,
+        role: data.userRole ?? backendUser.role ?? 'user',
+        status: data.userStatus ?? backendUser.status ?? 'free',
+        chosenAlarmId: backendUser.chosenAlarmId ?? null,
       };
 
-      setUser(loggedInUser);
-      return loggedInUser;
-    } catch (err) {
-      if (!error) {
-        setError(err.message || 'Login failed. Please try again.');
+      if (authUser.status === 'locked') {
+        throw new Error('Your account is locked. Please contact admin.');
       }
-      throw err;
+
+      setUser(authUser);
+      return authUser;
+    } catch (err) {
+      const message = err.message || 'Login failed. Please try again.';
+      setError(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -93,15 +75,16 @@ if (data.Details !== 'Accepted') {
 
   const logout = () => {
     setUser(null);
-    setError(null);
+    setError('');
     window.sessionStorage.removeItem('authUser');
   };
 
-  const value = { user, loading, error, login, logout };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, error, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
-
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);

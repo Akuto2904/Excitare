@@ -100,13 +100,9 @@ function AlarmDetailPage() {
       setSettingAlarm(true);
       setSetAlarmMessage('');
 
-      // Temporary user object until backend auth is fully connected
       const updatedUser = {
-        id: user.id,
-        name: user.email, // temporary placeholder
-        username: user.email,
-        password: 'placeholder',
-        chosenAlarmId: alarm.id,
+       id: user.id,
+       chosenAlarmId: alarm.id,
       };
 
       // Sends updated chosen alarm to the backend
