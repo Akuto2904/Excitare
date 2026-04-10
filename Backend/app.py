@@ -175,6 +175,132 @@ class alarmsAPI(Resource):
 
         return jsonify({"message": "Alarm deleted successfully!"})
 
+# Other Alarm Endpoints 
+
+# Retrieves alarm json given alarm ID in url
+@app.route("/api/alarm/<int:id>", methods=["GET"])
+@require_api_key
+def getAlarm(id):
+    row = db.session.execute(select(Alarm).where(Alarm.id == id)).first()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+
+    alarm = row[0]
+    dictAlarm = alarm.asdict()
+
+    links = {
+        "_links": [
+            {
+                "href": url_for("alarmsapi"),
+                "rel": "all",
+                "method": "GET",
+            },
+            {
+                "href": url_for("alarmsapi"),
+                "rel": "update",
+                "method": "PUT",
+            },
+            {
+                "href": url_for("alarmsapi"),
+                "rel": "delete",
+                "method": "DELETE",
+            },
+            {
+                "href": f"/api/alarm/{alarm.id}",
+                "rel": "new",
+                "method": "POST",
+            },
+            {
+                "href": f"/api/alarm/{alarm.id}",
+                "rel": "this",
+                "method": "GET",
+            },
+            {
+                "href": f"/api/reviews/{alarm.id}",
+                "rel": "reviews",
+                "method": "GET",
+            },
+            {
+                "href": f"/api/reviews/{alarm.id}",
+                "rel": "review",
+                "method": "POST",
+            },
+        ]
+    }
+
+    dictAlarm.update(links)
+    return jsonify(dictAlarm)
+
+# Posts new given alarm JSON, and given alarm ID in url
+@app.route("/api/alarm/<int:id>", methods=["POST"])
+@require_api_key
+def postAlarm(id):
+    alarm = request.get_json()
+    if not alarm:
+        return jsonify({"error": "not found"}), 404
+
+    existingAlarm = Alarm.query.get(id)
+    if existingAlarm:
+        return jsonify({"error": "Alarm with id already exists"}), 400
+
+    newAlarm = Alarm(
+        id=alarm["id"],
+        name=alarm["name"],
+        description=alarm["description"],
+    )
+    db.session.add(newAlarm)
+    db.session.commit()
+
+    return jsonify(
+        {
+            "message": "New alarm added successfully!",
+            "_links": [
+                {
+                    "href": f"/api/alarm/{newAlarm.id}",
+                    "rel": "this",
+                    "method": "GET",
+                }
+            ],
+        }
+    )
+
+# Retrieves an alarm's average rating as json given the alarms ID in url
+@app.route("/api/rating/<int:alarmIdGiven>", methods=["GET"])
+@require_api_key
+def getAlarmRating(alarmIdGiven):
+    rows = db.session.execute(
+        select(Review.reviewRating).where(Review.alarmId == alarmIdGiven)
+    ).scalars().all()
+
+    if len(rows) == 0:
+        return jsonify(
+            {
+                "Score": 0,
+                "_links": [
+                    {
+                        "href": f"/api/reviews/{alarmIdGiven}",
+                        "rel": "reviews",
+                        "method": "GET",
+                    }
+                ],
+            }
+        )
+
+    avgScore = round(sum(rows) / len(rows), 1)
+
+    return jsonify(
+        {
+            "Score": avgScore,
+            "_links": [
+                {
+                    "href": f"/api/reviews/{alarmIdGiven}",
+                    "rel": "reviews",
+                    "method": "GET",
+                }
+            ],
+        }
+    )
+
 
 # API Resource for users
 class usersAPI(Resource):
@@ -325,152 +451,7 @@ class usersAPI(Resource):
 
         return jsonify({"message": "User deleted successfully!"})
 
-
-# Register API endpoints
-api.add_resource(alarmsAPI, "/api/alarms")
-api.add_resource(usersAPI, "/api/users")
-
-
-# Setup basic routes for homepage temporarily
-@app.route("/")
-@require_api_key
-def index():
-    alarms = Alarm.query.all()
-    users = User.query.all()
-    reviews = Review.query.all()
-
-    return render_template("index.html", alarms=alarms, users=users, reviews=reviews)
-
-
-# Retrieves alarm json given alarm ID in url
-@app.route("/api/alarm/<int:id>", methods=["GET"])
-@require_api_key
-def getAlarm(id):
-    row = db.session.execute(select(Alarm).where(Alarm.id == id)).first()
-    if not row:
-        return jsonify({"error": "not found"}), 404
-
-    alarm = row[0]
-    dictAlarm = alarm.asdict()
-
-    links = {
-        "_links": [
-            {
-                "href": url_for("alarmsapi"),
-                "rel": "all",
-                "method": "GET",
-            },
-            {
-                "href": url_for("alarmsapi"),
-                "rel": "update",
-                "method": "PUT",
-            },
-            {
-                "href": url_for("alarmsapi"),
-                "rel": "delete",
-                "method": "DELETE",
-            },
-            {
-                "href": f"/api/alarm/{alarm.id}",
-                "rel": "new",
-                "method": "POST",
-            },
-            {
-                "href": f"/api/alarm/{alarm.id}",
-                "rel": "this",
-                "method": "GET",
-            },
-            {
-                "href": f"/api/reviews/{alarm.id}",
-                "rel": "reviews",
-                "method": "GET",
-            },
-            {
-                "href": f"/api/reviews/{alarm.id}",
-                "rel": "review",
-                "method": "POST",
-            },
-        ]
-    }
-
-    dictAlarm.update(links)
-    return jsonify(dictAlarm)
-
-
-# Posts new given alarm JSON, and given alarm ID in url
-@app.route("/api/alarm/<int:id>", methods=["POST"])
-@require_api_key
-def postAlarm(id):
-    alarm = request.get_json()
-    if not alarm:
-        return jsonify({"error": "not found"}), 404
-
-    existingAlarm = Alarm.query.get(id)
-    if existingAlarm:
-        return jsonify({"error": "Alarm with id already exists"}), 400
-
-    newAlarm = Alarm(
-        id=alarm["id"],
-        name=alarm["name"],
-        description=alarm["description"],
-    )
-    db.session.add(newAlarm)
-    db.session.commit()
-
-    return jsonify(
-        {
-            "message": "New alarm added successfully!",
-            "_links": [
-                {
-                    "href": f"/api/alarm/{newAlarm.id}",
-                    "rel": "this",
-                    "method": "GET",
-                }
-            ],
-        }
-    )
-
-
-# given users email and password in a json returns authentication
-@app.route("/api/login", methods=["POST"])
-@require_api_key
-def loginUser():
-    loginDetails = request.get_json()
-    if not loginDetails:
-        return jsonify({"error": "not found"}), 404
-
-    email = loginDetails.get("email")
-    password = loginDetails.get("password")
-
-    if not email or not password:
-        return jsonify({"Details": "Rejected", "error": "Missing email or password"}), 400
-
-    row = db.session.execute(select(User).where(User.email == email)).first()
-    if not row:
-        return jsonify({"Details": "Rejected"}), 401
-
-    user = row[0]
-
-    try:
-        decryptedDatabasePass = fernet.decrypt(bytes.fromhex(user.password)).decode()
-    except Exception:
-        return jsonify({"Details": "Rejected", "error": "Password decode failed"}), 500
-
-    dictUser = user.asdict()
-
-    if decryptedDatabasePass == password:
-        return jsonify(
-            {
-                "Details": "Accepted",
-                "userId": user.id,
-                "userRole": user.role,
-                "userStatus": user.status,
-                "user": dictUser,
-            }
-        )
-
-    return jsonify({"Details": "Rejected"}), 401
-
+# Other User Endpoints 
 
 # Retrieves user json given users ID in url
 @app.route("/api/user/<int:id>", methods=["GET"])
@@ -521,7 +502,6 @@ def getUser(id):
     dictUser.update(links)
     return jsonify(dictUser)
 
-
 # Retrieves user status as json given users ID in url
 @app.route("/api/user/<int:id>/status", methods=["GET"])
 @require_api_key
@@ -568,7 +548,6 @@ def getUserStatus(id):
     }
 
     return jsonify({"status": user.status, "_links": links["_links"]})
-
 
 # Retrieves user json given users username in url
 @app.route("/api/user/<string:username>", methods=["GET"])
@@ -620,6 +599,13 @@ def getUserViaUsername(username):
     return jsonify(dictUser)
 
 
+# Register API endpoints
+api.add_resource(alarmsAPI, "/api/alarms")
+api.add_resource(usersAPI, "/api/users")
+
+
+# Review Endpoints
+
 # Retrieves an alarm's reviews as json given the alarms ID in url
 @app.route("/api/reviews/<int:alarmIdGiven>", methods=["GET"])
 @require_api_key
@@ -645,45 +631,6 @@ def getAlarmReviews(alarmIdGiven):
 
     reviews.append(links)
     return jsonify(reviews)
-
-
-# Retrieves an alarm's average rating as json given the alarms ID in url
-@app.route("/api/rating/<int:alarmIdGiven>", methods=["GET"])
-@require_api_key
-def getAlarmRating(alarmIdGiven):
-    rows = db.session.execute(
-        select(Review.reviewRating).where(Review.alarmId == alarmIdGiven)
-    ).scalars().all()
-
-    if len(rows) == 0:
-        return jsonify(
-            {
-                "Score": 0,
-                "_links": [
-                    {
-                        "href": f"/api/reviews/{alarmIdGiven}",
-                        "rel": "reviews",
-                        "method": "GET",
-                    }
-                ],
-            }
-        )
-
-    avgScore = round(sum(rows) / len(rows), 1)
-
-    return jsonify(
-        {
-            "Score": avgScore,
-            "_links": [
-                {
-                    "href": f"/api/reviews/{alarmIdGiven}",
-                    "rel": "reviews",
-                    "method": "GET",
-                }
-            ],
-        }
-    )
-
 
 # Posts new review given json of new review and given the alarms ID in url
 @app.route("/api/reviews/<int:alarmIdGiven>", methods=["POST"])
@@ -741,7 +688,6 @@ def postAlarmReview(alarmIdGiven):
         }
     )
 
-
 # Deletes an alarm's review given a JSON containing the review's ID
 @app.route("/api/reviews", methods=["DELETE"])
 @require_api_key
@@ -772,6 +718,51 @@ def deleteAlarmReview():
     )
 
 
+# Login Endpoint
+
+# given users email and password in a json returns authentication
+@app.route("/api/login", methods=["POST"])
+@require_api_key
+def loginUser():
+    loginDetails = request.get_json()
+    if not loginDetails:
+        return jsonify({"error": "not found"}), 404
+
+    email = loginDetails.get("email")
+    password = loginDetails.get("password")
+
+    if not email or not password:
+        return jsonify({"Details": "Rejected", "error": "Missing email or password"}), 400
+
+    row = db.session.execute(select(User).where(User.email == email)).first()
+    if not row:
+        return jsonify({"Details": "Rejected"}), 401
+
+    user = row[0]
+
+    try:
+        decryptedDatabasePass = fernet.decrypt(bytes.fromhex(user.password)).decode()
+    except Exception:
+        return jsonify({"Details": "Rejected", "error": "Password decode failed"}), 500
+
+    dictUser = user.asdict()
+
+    if decryptedDatabasePass == password:
+        return jsonify(
+            {
+                "Details": "Accepted",
+                "userId": user.id,
+                "userRole": user.role,
+                "userStatus": user.status,
+                "user": dictUser,
+            }
+        )
+
+    return jsonify({"Details": "Rejected"}), 401
+
+
+# Google Calendar Integration Endpoints
+
 # Send user here and it'll redirect to google authentication
 @app.route("/api/<string:userID>/calendarLogin")
 def calendarLogin(userID):
@@ -791,8 +782,7 @@ def calendarLogin(userID):
 
     return redirect(googleAuth)
 
-
-# User is sent here after google authentication, saves credentials to database then redirects
+# User is sent here after google authentication, saves credentials to database then will redirect to the front end
 @app.route("/calendarLoginRedirect")
 def calendarLoginRedirect():
     userID = request.args.get("state")
@@ -817,8 +807,9 @@ def calendarLoginRedirect():
     db.session.commit()
 
     return jsonify({"Message": "Log In Success"})
+    # Redirect
 
-
+# Returns JSON of users google calendars to make a selection with
 @app.route("/api/<string:userID>/calendars", methods=["GET"])
 @require_api_key
 def calendars(userID):
@@ -852,9 +843,8 @@ def calendars(userID):
         print(f"An error occurred: {error}")
         return jsonify({"error": f"An error occurred: {error}"}), 500
 
-
 # Given a calendarID in a JSON, sets the user in url's chosen calendar
-@app.route("/setCalendar/<string:userID>", methods=["PUT"])
+@app.route("/api/setCalendar/<string:userID>", methods=["PUT"])
 @require_api_key
 def setCalendar(userID):
     requestMade = request.get_json()
@@ -886,7 +876,6 @@ def setCalendar(userID):
             ],
         }
     )
-
 
 # Retrieves the name and the time of the first event scheduled the next day for the user in url
 @app.route("/api/<string:userID>/firstClass", methods=["GET"])
@@ -937,7 +926,6 @@ def classTime(userID):
     except HttpError as error:
         print(f"An error occurred: {error}")
         return jsonify({"error": f"An error occurred: {error}"}), 500
-
 
 if __name__ == "__main__":
     with app.app_context():
