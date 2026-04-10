@@ -431,7 +431,7 @@ def postAlarm(id):
         return jsonify({"error": "Alarm with id already exists"}), 400
 
 # given users email and password in a json returns authentication
-@app.route('/api/login', methods = ['GET'])
+@app.route('/api/login', methods = ['POST'])
 @require_api_key  # Applies middleware
 def loginUser():
     loginDetails = request.get_json()
@@ -446,8 +446,10 @@ def loginUser():
 
     decryptedDatabasePass=(fernet.decrypt(bytes.fromhex(user.password))).decode()
 
+    dictUser = (user.asdict())
+
     if (decryptedDatabasePass==loginDetails["password"]):
-        return jsonify({"Details": "Accepted", "userRole":user.role, "userStatus":user.status})
+        return jsonify({"Details": "Accepted"}, dictUser)
     else:
         return {"Details": "Rejected"}    
 

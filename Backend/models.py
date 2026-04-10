@@ -27,7 +27,7 @@ class User(db.Model):
     chosenAlarmId = db.Column(db.Integer, nullable=False, default="none")
     # Used to convert the object into a dictionary type allowing easy json conversion
     def asdict(self):
-        return {'id': self.id, 'name': self.name, 'username': self.username, 'email':self.email, 'password': self.password, 'chosenAlarmId' : self.chosenAlarmId}
+        return {'id': self.id, 'name': self.name, 'username': self.username, 'email':self.email, 'role': self.role, 'status': self.status, 'chosenAlarmId' : self.chosenAlarmId}
 
 # Used to represent the review table's data in database
 class Review(db.Model):
