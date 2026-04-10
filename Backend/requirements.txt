@@ -8,3 +8,6 @@ google-auth-httplib2
 google-auth-oauthlib
 cryptography
 python-dotenv
+pytest
+flask-swagger
+flask_swagger_ui
