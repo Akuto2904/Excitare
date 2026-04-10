@@ -14,7 +14,7 @@ const AdminLayout = ({ title, children }) => {
         <header className="main-menu-navbar">
           <div>
             <img
-              src="/PlaceHolder.jpg"
+              src="../assets/logo.png"
               alt="Alarm admin logo"
               className="navbar-logo"
             />
