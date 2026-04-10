@@ -13,7 +13,6 @@ Inside directory /Backend/ run command: python app.py
         @ Route: /api/alarms
 
             **GET** Endpoint - retrieves all alarms
-                curl -H "X-API-KEY: ValidAPIKey" http://localhost:5000/api/alarms
 
             **PUT** Endpoint - updates an existing alarm, given JSON of new alarm state
 
@@ -25,6 +24,9 @@ Inside directory /Backend/ run command: python app.py
 
             **POST** Endpoint - Posts new given alarm given in JSON, at given the alarm's ID in url
 
+        @ Route: /api/rating/<int:alarmIdGiven>
+
+            **GET** Endpoint - Retrieves an alarm's average rating as json given the alarms ID in url
 
 ##      Users: 
         @ Route: /api/users
@@ -45,6 +47,10 @@ Inside directory /Backend/ run command: python app.py
 
             **GET** Endpoint - retrives user json given users username in url
 
+        @ Route: /api/user/<int:id>/status
+
+            **GET** Endpoint - Retrieves user status as json given users ID in url
+
 
 ##      Reviews: 
         @ Route: /api/reviews/<int:alarmIdGiven>
@@ -56,3 +62,34 @@ Inside directory /Backend/ run command: python app.py
         @ Route: /api/reviews
 
             **DELETE** Endpoint - deletes an alarm's review given a JSON containing the review's ID
+
+##      Login: 
+        @ Route: /api/login
+
+            **POST** Endpoint - given users email and password in a json returns authentication and user information
+
+##      Google Calendar Integration
+
+        @ Route: /api/<string:userID>/calendarLogin
+
+            **Login** Endpoint - Send user here and it'll redirect to google authentication
+        
+        @ Route: /calendarLoginRedirect
+
+           **After Login Redirect** Endpoint - User is sent here after google authentication, saves credentials to database then redirects to frontend
+        
+        @ Route: /api/<string:userID>/calendars
+
+           **GET** Endpoint - Returns JSON of users google calendars to make a selection with
+
+        @ Route: /setCalendar/<string:userID>
+
+           **PUT** Endpoint - Given a calendarID in a JSON, sets the user in url's chosen calendar
+        
+        @ Route: /api/<string:userID>/firstClass
+
+           **GET** Endpoint - Retrieves the name and the time of the first event scheduled the next day for the user in url
+
+
+
+
